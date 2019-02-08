@@ -1,18 +1,26 @@
 package skele
 
 import (
+	"errors"
 	"time"
 )
 
 // Skeller is the interface defining an API interface item and metadata
 type Skeller interface {
-	Name() string
-	Authors() []string
-	Version() string
-	Licence() string
-	Init(...interface{})
-	Brief() string
-	Help(string) string
+	GetName() string
+	SetName(string) error
+	GetAuthors() []string
+	SetAuthors([]string) error
+	GetVersion() string
+	SetVersion(string) error
+	GetLicence() string
+	SetLicence(string) error
+	GetInit() []interface{}
+	SetInit(...interface{})
+	GetBrief() string
+	SetBrief(string) error
+	GetHelp(string) string
+	SetHelp(string, string) error
 }
 
 // Int is a skele integer type
@@ -105,7 +113,86 @@ func (p *Pair) Value() interface{} {
 	return p.V
 }
 
-// Cmd is a command, which can form a tree potentially launching the first, last, fifo or lifo order as implemented
+// Parse abstracts the type specific parsing using the type of the value in the pair
+func (p *Pair) Parse(in string) (err error) {
+	switch p.V.(type) {
+	case Int:
+		var o Int
+		o, err = ParseInt(in)
+		if err == nil {
+			p.V = o
+		}
+	case Float:
+		var o Float
+		o, err = ParseFloat(in)
+		if err == nil {
+			p.V = o
+		}
+	case Duration:
+		var o Duration
+		o, err = ParseDuration(in)
+		if err == nil {
+			p.V = o
+		}
+	case Time:
+		var o Time
+		o, err = ParseTime(in)
+		if err == nil {
+			p.V = o
+		}
+	case Date:
+		var o Date
+		o, err = ParseDate(in)
+		if err == nil {
+			p.V = o
+		}
+	case Size:
+		var o Size
+		o, err = ParseSize(in)
+		if err == nil {
+			p.V = o
+		}
+	case String:
+		var o String
+		o, err = ParseString(in)
+		p.V = o
+	case URL:
+		var o URL
+		o, err = ParseURL(in)
+		if err == nil {
+			p.V = o
+		}
+	case Address:
+		var o Address
+		o, err = ParseAddress(in)
+		if err == nil {
+			p.V = o
+		}
+	case Base58:
+		var o Base58
+		o, err = ParseBase58(in)
+		if err == nil {
+			p.V = o
+		}
+	case Base32:
+		var o Base32
+		o, err = ParseBase32(in)
+		if err == nil {
+			p.V = o
+		}
+	case Hex:
+		var o Hex
+		o, err = ParseHex(in)
+		if err == nil {
+			p.V = o
+		}
+	default:
+		err = errors.New("unhandled type")
+	}
+	return
+}
+
+// Cmd is a command, which can form a tree potentially launching the first, last, fifo or lifo order as implemented when the Pairs contains more Cmd items
 type Cmd struct {
 	name    string
 	authors []string
@@ -114,5 +201,6 @@ type Cmd struct {
 	inits   []func(...interface{}) error
 	brief   string
 	help    map[string]string
+	Handler func() error
 	Pairs   []Pair
 }

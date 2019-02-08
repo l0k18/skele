@@ -144,6 +144,11 @@ three:
 	return
 }
 
+// ParseString takes a string and returns a String (and never an error)
+func ParseString(in string) (out String, err error) {
+	return String(in), nil
+}
+
 // ParseURL takes a string and tries to construct a full URL from it based on assuming http from first slash after domain name, can include a port
 func ParseURL(in string) (out URL, err error) {
 	var u *url.URL
