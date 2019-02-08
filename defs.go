@@ -43,10 +43,10 @@ type URL string
 type Address string
 
 // Base58 is a Base58check string like a cryptocurrency address
-type Base58 string
+type Base58 []byte
 
 // Base32 is a base32 encoding as is used with some cryptocurrencies and cryptographic tools, not case sensitive but follows standard
-type Base32 string
+type Base32 []byte
 
 // Hex is a hexadecimal string, not case sensitive
 type Hex string

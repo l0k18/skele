@@ -1,10 +1,15 @@
 package skele
 
 import (
+	"encoding/base32"
+	"encoding/hex"
 	"errors"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
+
+	"git.parallelcoin.io/pod/pkg/util/base58"
 )
 
 // ParseInt tries to read an integer from a string
@@ -27,7 +32,7 @@ func ParseDuration(in string) (out Duration, err error) {
 	return Duration(o), err
 }
 
-// ParseTime takes a string and tries to read a time specification from it (time of day)
+// ParseTime takes a string and tries to read a time specification from it (time of day) as simple 24 hour HH:MM:SS format
 func ParseTime(in string) (out Time, err error) {
 	t, err := time.Parse("15:04:05", in)
 	return Time(t), err
@@ -141,30 +146,50 @@ three:
 
 // ParseURL takes a string and tries to construct a full URL from it based on assuming http from first slash after domain name, can include a port
 func ParseURL(in string) (out URL, err error) {
-
+	var u *url.URL
+	u, err = url.Parse(in)
+	if err == nil {
+		out = URL(u.String())
+	}
 	return
 }
 
 // ParseAddress takes a string and tries to get an IPv4 or IPv6 address
 func ParseAddress(in string) (out Address, err error) {
-
+	var u *url.URL
+	u, err = url.Parse(in)
+	if err == nil {
+		scheme := u.Scheme
+		host := u.Host
+		out = Address(scheme + "://" + host)
+	}
 	return
 }
 
 // ParseBase58 takes a string and tries to read a base58check binary value
 func ParseBase58(in string) (out Base58, err error) {
-
-	return
+	var r []byte
+	var v byte
+	r, v, err = base58.CheckDecode(in)
+	return append(append(out, v), r...), err
 }
 
 // ParseBase32 takes a string and tries to read base32 from it
 func ParseBase32(in string) (out Base32, err error) {
-
+	var b []byte
+	b, err = base32.StdEncoding.DecodeString(in)
+	if err == nil {
+		out = Base32(b)
+	}
 	return
 }
 
 // ParseHex takes a string and tries to read a hex string, including potentially the 0x prefix
 func ParseHex(in string) (out Hex, err error) {
-
+	var b []byte
+	b, err = hex.DecodeString(in)
+	if err == nil {
+		out = Hex(b)
+	}
 	return
 }
