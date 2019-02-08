@@ -70,9 +70,11 @@ var (
 	ptBase58   Base58
 	ptBase32   Base32
 	ptHex      Hex
+	ptCmd      Cmd
 
 	// ParamTypes allows recognition the types with the names using type switches
 	ParamTypes = []Pair{
+		{"cmd", ptCmd},
 		{"int", ptInt},
 		{"float", ptFloat},
 		{"duration", ptDuration},
@@ -103,7 +105,7 @@ func (p *Pair) Value() interface{} {
 	return p.V
 }
 
-// Cmd is a command,
+// Cmd is a command, which can form a tree potentially launching the first, last, fifo or lifo order as implemented
 type Cmd struct {
 	name    string
 	authors []string
