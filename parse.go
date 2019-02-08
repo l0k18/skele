@@ -182,7 +182,7 @@ func ParseBase58(in string) (out Base58, err error) {
 // ParseBase32 takes a string and tries to read base32 from it
 func ParseBase32(in string) (out Base32, err error) {
 	var b []byte
-	b, err = base32.StdEncoding.DecodeString(in)
+	b, err = base32.StdEncoding.DecodeString(strings.ToUpper(in))
 	if err == nil {
 		out = Base32(b)
 	}
