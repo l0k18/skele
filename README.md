@@ -10,7 +10,7 @@ Instead of confusing `-` and `--` prefixes, the parameter names themselves are j
 
     rpc 127.0.0.1:11048 u loki p pa55word s 127.0.0.1:11046
 
-Here we see the parser finds 'p2p' which in this case is the peer to peer, which can have certain things following it before the block is considered closed:
+Here we see the parser finds 'rpc' which in this case is the full node RPC, which can have certain things following it before the block is considered closed:
 
 rpc means next follows specs from an RPC client connection. Only one thing parsing as an address is allowed in the block, and u, user, and username, case insensitive, could replace the u, or any stupid prefixing punctuation (hah! i said it!), and p/pass/password are keywords belonging under rpc, and above, the `s` is not part of the 'rpc' set, but rather the rpcserver set, and so marks the end of the rpc block.
 
