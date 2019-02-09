@@ -1,25 +1,18 @@
-package sk
+package crsr
 
-// Cursor is the interface for a cursor on a Command tree
-type Cursor interface {
-	In() bool
-	Out() bool
-	Next() bool
-	Prev() bool
-	Pair() *Pair
-	Cmd() Commander
-	Position() int
-}
+import (
+	iface "github.com/l0k1verloren/skele/pkg/interfaces"
+)
 
 // cursor is a way to get around the Command tree
 type cursor struct {
-	cmd      Commander
+	cmd      iface.Commander
 	position int
 }
 
 // Crsr returns a cursor given a Commander. The index is -1 so that a loop can pre-increment and start at zero
 func Crsr(C Commander) Cursor {
-	return &cursor{C, -1}
+	return cursor{C, -1}
 }
 
 // In goes up to the parent of the current node
@@ -34,17 +27,15 @@ func (c *cursor) In() (did bool) {
 
 // Out walks outwards on a KV containing a Commander, returns true if it walked
 func (c *cursor) Out() (b bool) {
-	if c.Pair().IsType(COMMAND) {
-		c.cmd = c.Pair().V.(Commander)
-		c.position = -1
-	}
+	c.cmd = c.Pair().V.(Commander)
+	c.position = -1
 	return
 }
 
 // Next just returns the next item in the pairs slice and returns false when it is at the end
 func (c *cursor) Next() (did bool) {
 	c.position++
-	if c.cmd.NumPairs() > c.position {
+	if c.cmd.NumLists() > c.position {
 		did = true
 	} else {
 		c.cmd.ERR("warn", "no more pairs in slice")
@@ -63,13 +54,13 @@ func (c *cursor) Prev() (b bool) {
 	return
 }
 
-// Pair returns the pair under the cursor
-func (c *cursor) Pair() (p *Pair) {
-	if c.cmd.NumPairs() > c.position {
+// Item returns the item under the cursor
+func (c *cursor) Item() (p Commander) {
+	if c.cmd.NumLists() > c.position {
 		return c.cmd.Pair(c.position)
 	}
 	c.cmd.ERR("warn", "somehow cursor fell off the edge, moving back to edge")
-	c.position = c.cmd.NumPairs() - 1
+	c.position = c.cmd.NumLists() - 1
 	return
 }
 

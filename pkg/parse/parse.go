@@ -1,4 +1,4 @@
-package sk
+package parse
 
 import (
 	"encoding/base32"

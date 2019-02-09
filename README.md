@@ -28,11 +28,9 @@ The grammar is rigid, in that you must put the keywords in there, but flexible i
 
 There is two types of keywords, commands and pairs. Pairs are in arrays attached to commands, and can contain commands. Commands are followed by pairs of keyword and value.
 
-Due to the parsing procedure, it is not possible for any keyword to be the same between a parent command and child, however this is not an onerous restriction because if one needs two addresses they probably relate to two different things, and won't appear in this configuration.
-
-
+Names cannot be common between a parent and child node, as by default the parser is greedy to get back to the root so it will read a key as outer if it is both. A self-linter routine checks for these and panics if it finds them.
 
 ### Environment Variables
 
-Environment variables are also searched for matches. Their construction matches the hierarchy of the tree for parsing CLI commands - 
+Environment variables are also searched for matches. Their construction matches the hierarchy of the tree for parsing CLI commands, so if a command's path was `node/droptx` and the executable name was `pod` it will be turned to sausage case: `POD_NODE_DROPTX`. However, that is not the best example as environment variables do not start applications, they only set values
 
