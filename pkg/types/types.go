@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	iface "github.com/l0k1verloren/skele/interfaces"
 )
 
 // Int is a skele integer type
@@ -86,7 +84,7 @@ type Key struct {
 
 // The programmer-friendly enum for all the types handled by skele
 var (
-	COMMAND      = Key{"command", *new(iface.Commander)}
+	COMMAND      = Key{"command", *new(ifc.Commander)}
 	INT          = Key{"int", *new(Int)}
 	INTLIST      = Key{"intlist", *new(IntList)}
 	FLOAT        = Key{"float", *new(Float)}
@@ -111,15 +109,7 @@ var (
 	BASE32LIST   = Key{"base32list", *new(Base32)}
 	HEX          = Key{"hex", *new(Hex)}
 	HEXLIST      = Key{"hexlist", *new(HexList)}
-)
 
-var (
-	// T are the types of values in a skele commandline parser. This map is used with a type switch to determine how to interpret a token
-	T = map[int]List{}
-)
-
-var (
-	// HelpTypes are the different formats a help text can be encoded in
 	HelpTypes = []string{
 		"pre",
 		"markdown",

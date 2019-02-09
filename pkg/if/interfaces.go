@@ -1,4 +1,4 @@
-package iface
+package ifc
 
 // Commander is the interface defining an API interface item and metadata
 type Commander interface {
