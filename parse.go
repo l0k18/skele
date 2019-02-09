@@ -1,4 +1,4 @@
-package skele
+package sk
 
 import (
 	"encoding/base32"
@@ -150,11 +150,11 @@ func ParseString(in string) (out String, err error) {
 }
 
 // ParseURL takes a string and tries to construct a full URL from it based on assuming http from first slash after domain name, can include a port
-func ParseURL(in string) (out URL, err error) {
+func ParseURL(in string) (out Url, err error) {
 	var u *url.URL
 	u, err = url.Parse(in)
 	if err == nil {
-		out = URL(u.String())
+		out = Url(u.String())
 	}
 	return
 }

@@ -6,21 +6,33 @@
 
 Have you ever thought about the fact that command lines are basically just function calls? Well, stop treating them differently, use skele.
 
-Instead of confusing `-` and `--` prefixes, the parameter names themselves are just sequences that unfold some specific syntax or other, such as 
+Instead of confusing `-` and `--` prefixes, the parameter names themselves are just sequences that unfold some specific syntax or other. To make the parser as simple as possible, we make a simple set of rules.
 
-    rpc 127.0.0.1:11048 u loki p pa55word s 127.0.0.1:11046
+An example off a skele syntax invocation of the pod wallet:
 
-Here we see the parser finds 'rpc' which in this case is the full node RPC, which can have certain things following it before the block is considered closed:
+    pod l debug d test wallet rpc addr 127.0.0.1:11048 u user p password s addr 127.0.0.1:11046
 
-rpc means next follows specs from an RPC client connection. Only one thing parsing as an address is allowed in the block, and u, user, and username, case insensitive, could replace the u, or any stupid prefixing punctuation (hah! i said it!), and p/pass/password are keywords belonging under rpc, and above, the `s` is not part of the 'rpc' set, but rather the rpcserver set, and so marks the end of the rpc block.
+This can be easily decomposed into this grammar tree by preferentially scanning for keywords, and if a symbol completely matches the first part of a symbol it is interpreted as that symbol. The next symbol is interpreted as the value of that key.
 
-The address above does not need a specific prefix keyword because it contains the pattern of an address, but generic strings must have a prefix keyword and are indistinguishable, and if unlabeled are interpreted into the order from the specification.
+pod (executable filename)
+- loglevel debug
+- datadir test
+- rpcconnect
+  - address 127.0.0.1:11048
+  - username user
+  - password password
+- server
+  - address 127.0.0.1:11046
 
-Command line parameters are supposed to be easy for humans to type, otherwise you you compile it.
+The grammar is rigid, in that you must put the keywords in there, but flexible in that you only have to type usually only one character to signify a keyword.
 
-### Logging should be everywhere
+There is two types of keywords, commands and pairs. Pairs are in arrays attached to commands, and can contain commands. Commands are followed by pairs of keyword and value.
 
-A simple and low-overhead channel based logging system with easy per-package drop-in boilerplate, and closures for heavy log jobs infrequently used. Switch out its' stream writer to write logs to files, subscribers, log rotators. Using channels for logging means not interfering so much with the main goroutines.
+Due to the parsing procedure, it is not possible for any keyword to be the same between a parent command and child, however this is not an onerous restriction because if one needs two addresses they probably relate to two different things, and won't appear in this configuration.
 
-Logging is very helpful for diagnosing errors that have slipped past many layers of effort to eliminate them and can help improve user experience as well. The same model could be used to create a journalling system to implement undo and concurrent versioning.
+
+
+### Environment Variables
+
+Environment variables are also searched for matches. Their construction matches the hierarchy of the tree for parsing CLI commands - 
 
