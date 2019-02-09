@@ -9,40 +9,41 @@ import (
 	"strings"
 	"time"
 
+	d "github.com/l0k1verloren/skele/pkg/def"
+
 	"git.parallelcoin.io/pod/pkg/util/base58"
-	"github.com/l0k1verloren/skele/pkg/defs"
 )
 
 // Int tries to read an integer from a string
-func Int(in string) (out defs.Int, err error) {
+func Int(in string) (out d.Int, err error) {
 	var i int64
 	i, err = strconv.ParseInt(in, 10, 64)
-	return defs.Int(i), err
+	return d.Int(i), err
 }
 
 // Float tries to read a floating point number from a string
-func Float(in string) (out defs.Float, err error) {
+func Float(in string) (out d.Float, err error) {
 	var i float64
 	i, err = strconv.ParseFloat(in, 64)
-	return defs.Float(i), err
+	return d.Float(i), err
 }
 
 // Duration takes a string and tries to read a duration in Golang time.Duration format
-func Duration(in string) (out defs.Duration, err error) {
+func Duration(in string) (out d.Duration, err error) {
 	o, err := time.ParseDuration(in)
-	return defs.Duration(o), err
+	return d.Duration(o), err
 }
 
 // Time takes a string and tries to read a time specification from it (time of day) as simple 24 hour HH:MM:SS format
-func Time(in string) (out defs.Time, err error) {
+func Time(in string) (out d.Time, err error) {
 	t, err := time.Parse("15:04:05", in)
-	return defs.Time(t), err
+	return d.Time(t), err
 }
 
 // Date takes a string and tries to read a date in yyyy-mm-dd format
-func Date(in string) (out defs.Date, err error) {
+func Date(in string) (out d.Date, err error) {
 	t, err := time.Parse("2006-01-02", in)
-	return defs.Date(t), err
+	return d.Date(t), err
 }
 
 const (
@@ -65,12 +66,12 @@ const (
 // kKmMgGtTpP single letter for power of 2 based size
 // kb/mb/gb/tb/pb case insensitive ^2 based size
 // kib/mib/gib/tib/pib case insensitive 10 based size
-func Size(in string) (out defs.Size, err error) {
+func Size(in string) (out d.Size, err error) {
 	unit := one
 	var ii int64
 	ii, err = strconv.ParseInt(in, 10, 64)
 	if err == nil {
-		return defs.Size(ii), nil
+		return d.Size(ii), nil
 	}
 	if len(in) > 1 {
 		last1 := in[len(in)-1]
@@ -90,7 +91,7 @@ func Size(in string) (out defs.Size, err error) {
 		}
 		ii, err = strconv.ParseInt(in[:len(in)-1], 10, 64)
 		if err == nil {
-			out = defs.Size(unit * ii)
+			out = d.Size(unit * ii)
 		}
 		return
 	}
@@ -113,7 +114,7 @@ two:
 		}
 		ii, err = strconv.ParseInt(in[:len(in)-2], 10, 64)
 		if err == nil {
-			out = defs.Size(unit * ii)
+			out = d.Size(unit * ii)
 		}
 		return
 	}
@@ -136,7 +137,7 @@ three:
 		}
 		ii, err = strconv.ParseInt(in[:len(in)-3], 10, 64)
 		if err == nil {
-			out = defs.Size(unit * ii)
+			out = d.Size(unit * ii)
 		}
 		return
 	four:
@@ -146,34 +147,34 @@ three:
 }
 
 // String takes a string and returns a String (and never an error)
-func String(in string) (out defs.String, err error) {
-	return defs.String(in), nil
+func String(in string) (out d.String, err error) {
+	return d.String(in), nil
 }
 
 // URL takes a string and tries to construct a full URL from it based on assuming http from first slash after domain name, can include a port
-func URL(in string) (out defs.Url, err error) {
+func URL(in string) (out d.Url, err error) {
 	var u *url.URL
 	u, err = url.Parse(in)
 	if err == nil {
-		out = defs.Url(u.String())
+		out = d.Url(u.String())
 	}
 	return
 }
 
 // Address takes a string and tries to get an IPv4 or IPv6 address
-func Address(in string) (out defs.Address, err error) {
+func Address(in string) (out d.Address, err error) {
 	var u *url.URL
 	u, err = url.Parse(in)
 	if err == nil {
 		scheme := u.Scheme
 		host := u.Host
-		out = defs.Address(scheme + "://" + host)
+		out = d.Address(scheme + "://" + host)
 	}
 	return
 }
 
 // Base58 takes a string and tries to read a base58check binary value
-func Base58(in string) (out defs.Base58, err error) {
+func Base58(in string) (out d.Base58, err error) {
 	var r []byte
 	var v byte
 	r, v, err = base58.CheckDecode(in)
@@ -181,21 +182,21 @@ func Base58(in string) (out defs.Base58, err error) {
 }
 
 // Base32 takes a string and tries to read base32 from it
-func Base32(in string) (out defs.Base32, err error) {
+func Base32(in string) (out d.Base32, err error) {
 	var b []byte
 	b, err = base32.StdEncoding.DecodeString(strings.ToUpper(in))
 	if err == nil {
-		out = defs.Base32(b)
+		out = d.Base32(b)
 	}
 	return
 }
 
 // Hex takes a string and tries to read a hex string, including potentially the 0x prefix
-func Hex(in string) (out defs.Hex, err error) {
+func Hex(in string) (out d.Hex, err error) {
 	var b []byte
 	b, err = hex.DecodeString(in)
 	if err == nil {
-		out = defs.Hex(b)
+		out = d.Hex(b)
 	}
 	return
 }

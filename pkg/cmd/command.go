@@ -6,12 +6,12 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-spew/spew"
+	. "github.com/l0k1verloren/skele/pkg/def"
+	"github.com/l0k1verloren/skele/pkg/parse"
 )
 
-// ensurirg command implements skeller
 var _ Commander = new(command)
 
-// command is a command, which can form a tree that executes a fifo chain of subcommands
 type command struct {
 	parent  Commander
 	name    string
@@ -26,18 +26,6 @@ type command struct {
 	err     error
 }
 
-// Attach copies inheritable properties from another command and links back to the parent
-func Attach(i Commander) Commander {
-	c := Cmd()
-	if i != nil {
-		c.VERS(i.Version()).
-			AUTH(i.Authors()...).
-			LCNS(i.License()).
-			PRNT(i)
-	}
-	return c
-}
-
 // Cmd returns a new command
 func Cmd() Commander {
 	c := new(command)
@@ -50,62 +38,62 @@ func Parse(in string, T interface{}) (out interface{}, err error) {
 	switch T.(type) {
 	case Int:
 		var o Int
-		if o, err = ParseInt(in); err == nil {
+		if o, err = parse.Int(in); err == nil {
 			out = o
 		}
 	case Float:
 		var o Float
-		if o, err = ParseFloat(in); err == nil {
+		if o, err = parse.Float(in); err == nil {
 			out = o
 		}
 	case Duration:
 		var o Duration
-		if o, err = ParseDuration(in); err == nil {
+		if o, err = parse.Duration(in); err == nil {
 			out = o
 		}
 	case Time:
 		var o Time
-		if o, err = ParseTime(in); err == nil {
+		if o, err = parse.Time(in); err == nil {
 			out = o
 		}
 	case Date:
 		var o Date
-		if o, err = ParseDate(in); err == nil {
+		if o, err = parse.Date(in); err == nil {
 			out = o
 		}
 	case Size:
 		var o Size
-		if o, err = ParseSize(in); err == nil {
+		if o, err = parse.Size(in); err == nil {
 			out = o
 		}
 	case String:
 		var o String
-		if o, err = ParseString(in); err == nil {
+		if o, err = parse.String(in); err == nil {
 			out = o
 		}
 	case Url:
 		var o Url
-		if o, err = ParseURL(in); err == nil {
+		if o, err = parse.URL(in); err == nil {
 			out = o
 		}
 	case Address:
 		var o Address
-		if o, err = ParseAddress(in); err == nil {
+		if o, err = parse.Address(in); err == nil {
 			out = o
 		}
 	case Base58:
 		var o Base58
-		if o, err = ParseBase58(in); err == nil {
+		if o, err = parse.Base58(in); err == nil {
 			out = o
 		}
 	case Base32:
 		var o Base32
-		if o, err = ParseBase32(in); err == nil {
+		if o, err = parse.Base32(in); err == nil {
 			out = o
 		}
 	case Hex:
 		var o Hex
-		if o, err = ParseHex(in); err == nil {
+		if o, err = parse.Hex(in); err == nil {
 			out = o
 		}
 	default:
@@ -210,7 +198,7 @@ func (c *command) VERS(in string) Commander {
 	}
 	numbers := strings.Split(in[1:], ".")
 	for _, num := range numbers {
-		_, c.err = ParseInt(num)
+		_, c.err = parse.Int(num)
 		if c.err != nil {
 			c.ERR("error", "improperly formatted version string: '"+in+"' : "+c.err.Error())
 		}
@@ -309,8 +297,8 @@ func (c *command) OK() (b bool) {
 	return
 }
 
-// List returns the pair at the specified index, if it exists
-func (c *command) List(i int) (p Commander) {
+// Item returns the pair at the specified index, if it exists
+func (c *command) Item(i int) (p Commander) {
 	if len(c.list) > i {
 		return c.list[i]
 	}
@@ -324,23 +312,18 @@ func (c *command) LIST(cc ...Commander) Commander {
 	return c
 }
 
-// Lists returns the commands attached to a command
-func (c *command) Lists() []Commander {
+// List returns the commands attached to a command
+func (c *command) List() []Commander {
 	return c.list
 }
 
-// AddList adds a pair to the pairs array
-func (c *command) AddList(p Commander) Commander {
+// Append adds an item to the list
+func (c *command) Append(p Commander) Commander {
 	c.list = append(c.list, p)
 	return c
 }
 
-// NumLists returns the length of the pairs slice
-func (c *command) NumLists() int {
+// Len returns the length of the pairs slice
+func (c *command) Len() int {
 	return len(c.list)
-}
-
-// IsType returns true if the constant integer code matches the string code in the List
-func (p *List) IsType(t int) bool {
-	return p.K == Types[t].K
 }

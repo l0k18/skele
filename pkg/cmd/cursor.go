@@ -1,4 +1,4 @@
-package crsr
+package cmd
 
 import . "github.com/l0k1verloren/skele/pkg/def"
 
@@ -12,7 +12,7 @@ type cursor struct {
 
 // Crsr returns a cursor given a Commander. The index is -1 so that a loop can pre-increment and start at zero
 func Crsr(C Commander) Cursor {
-	return cursor{C, -1}
+	return &cursor{C, -1}
 }
 
 // In goes up to the parent of the current node
@@ -27,15 +27,14 @@ func (c *cursor) In() (did bool) {
 
 // Out walks outwards on a KV containing a Commander, returns true if it walked
 func (c *cursor) Out() (b bool) {
-	c.cmd = c.Pair().V.(Commander)
-	c.position = -1
+	c.cmd.Item(c.position).Len()
 	return
 }
 
 // Next just returns the next item in the pairs slice and returns false when it is at the end
 func (c *cursor) Next() (did bool) {
 	c.position++
-	if c.cmd.NumLists() > c.position {
+	if c.cmd.Len() > c.position {
 		did = true
 	} else {
 		c.cmd.ERR("warn", "no more pairs in slice")
@@ -56,16 +55,16 @@ func (c *cursor) Prev() (b bool) {
 
 // Item returns the item under the cursor
 func (c *cursor) Item() (p Commander) {
-	if c.cmd.NumLists() > c.position {
-		return c.cmd.Pair(c.position)
+	if c.cmd.Len() > c.position {
+		return c.cmd.Item(c.position)
 	}
 	c.cmd.ERR("warn", "somehow cursor fell off the edge, moving back to edge")
-	c.position = c.cmd.NumLists() - 1
+	c.position = c.cmd.Len() - 1
 	return
 }
 
 // Cmd just returns the Commander inside it
-func (c *cursor) Cmd() defs.Commander {
+func (c *cursor) Cmd() Commander {
 	return c.cmd
 }
 

@@ -27,11 +27,11 @@ type Commander interface {
 	Status() string
 	ERR(string, string) Commander
 	OK() bool
-	List(int) Commander
-	Lists() []Commander
+	Item(int) Commander
+	List() []Commander
 	LIST(...Commander) Commander
-	AddList(p Commander) Commander
-	NumLists() int
+	Append(p Commander) Commander
+	Len() int
 	String() string
 }
 
