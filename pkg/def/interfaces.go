@@ -1,4 +1,4 @@
-package ifc
+package def
 
 // Commander is the interface defining an API interface item and metadata
 type Commander interface {

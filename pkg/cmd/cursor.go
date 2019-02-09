@@ -1,12 +1,12 @@
 package crsr
 
-import (
-	iface "github.com/l0k1verloren/skele/pkg/interfaces"
-)
+import . "github.com/l0k1verloren/skele/pkg/def"
+
+var _ Cursor = new(cursor)
 
 // cursor is a way to get around the Command tree
 type cursor struct {
-	cmd      iface.Commander
+	cmd      Commander
 	position int
 }
 
@@ -65,7 +65,7 @@ func (c *cursor) Item() (p Commander) {
 }
 
 // Cmd just returns the Commander inside it
-func (c *cursor) Cmd() Commander {
+func (c *cursor) Cmd() defs.Commander {
 	return c.cmd
 }
 

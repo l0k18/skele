@@ -1,10 +1,9 @@
-package sk
+package cmd
 
 import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/davecgh/go-spew/spew"
 )
