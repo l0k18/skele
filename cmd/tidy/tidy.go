@@ -41,7 +41,7 @@ usage:
 `, os.Args[0])
 }
 
-var sections [][]string
+var sections [][][]string
 
 const (
 	_p = iota
@@ -85,7 +85,7 @@ func tidyFile() {
 		adjusted = append(adjusted, li.i+1)
 	}
 	var i, prev int
-	sections = make([][]string, 6)
+	sections = make([][][]string, 6)
 	for i = range adjusted {
 		l := lines[prev:adjusted[i]]
 		prev = adjusted[i]
@@ -96,17 +96,17 @@ func tidyFile() {
 		section = append(section, "")
 		switch lines[keyLines[i]][0] {
 		case 'p':
-			sections[_p] = append(sections[_p], section...)
+			sections[_p] = append(sections[_p], section)
 		case 'i':
-			sections[_i] = append(sections[_i], section...)
+			sections[_i] = append(sections[_i], section)
 		case 't':
-			sections[_t] = append(sections[_t], section...)
+			sections[_t] = append(sections[_t], section)
 		case 'c':
-			sections[_c] = append(sections[_c], section...)
+			sections[_c] = append(sections[_c], section)
 		case 'v':
-			sections[_v] = append(sections[_v], section...)
+			sections[_v] = append(sections[_v], section)
 		case 'f':
-			sections[_f] = append(sections[_f], section...)
+			sections[_f] = append(sections[_f], section)
 		}
 	}
 	// fmt.Println(sections)
