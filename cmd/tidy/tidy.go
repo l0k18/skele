@@ -2,13 +2,23 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 )
 
+var err error
+
 func main() {
 	if len(os.Args) > 1 {
+		if len(os.Args) > 2 {
+			out, err = os.OpenFile(os.Args[2], os.O_CREATE|os.O_RDWR, 0600)
+			if err != nil {
+				panic(err)
+			}
+		}
 		tidyFile()
 	} else {
 		printHelp()
@@ -16,7 +26,7 @@ func main() {
 }
 
 func printHelp() {
-	fmt.Printf(`go source tidy
+	print(`go source tidy
 	
 usage:
 
@@ -51,6 +61,12 @@ const (
 	_v
 	_f
 )
+
+var out io.Writer = os.Stdout
+
+func print(i ...interface{}) {
+	fmt.Fprint(out, i...)
+}
 
 func tidyFile() {
 	b, err := ioutil.ReadFile(os.Args[1])
@@ -109,10 +125,78 @@ func tidyFile() {
 			sections[_f] = append(sections[_f], section)
 		}
 	}
-	// fmt.Println(sections)
+	var sectMap []map[string]map[int][]string
 	for i := range sections {
-		for _, x := range sections[i] {
-			fmt.Println(x)
+		sectMap = append(sectMap, make(map[string]map[int][]string))
+		for j := range sections[i] {
+			for _, x := range sections[i][j] {
+				if isComment(x) {
+					continue
+				}
+				sectMap[i][x] = make(map[int][]string)
+				sectMap[i][x][j] = sections[i][j]
+				break
+			}
+		}
+	}
+	var fmap []string
+	for i := range sectMap[5] {
+		fmap = append(fmap, i)
+	}
+	sort.Strings(fmap)
+	for _, x := range sectMap[_p] {
+		for _, y := range x {
+			for _, z := range y {
+				print(z, "\n")
+			}
+		}
+	}
+	print("// section:", keywords[_i], "s\n\n")
+	print("import (\n")
+	for _, x := range sectMap[_i] {
+		for _, y := range x {
+			sort.Strings(y)
+			var internal, external []string
+			for _, z := range y {
+				if strings.Contains(z, ".") {
+					external = append(external, z)
+				} else if strings.Contains(z, "\"") {
+					internal = append(internal, z)
+				}
+			}
+			for _, a := range internal {
+				print(a, "\n")
+			}
+			print("\n")
+			for _, a := range external {
+				print(a, "\n")
+			}
+		}
+	}
+	print(")\n\n")
+	print("// section:", keywords[_t], "s\n\n")
+	for _, x := range sectMap[_t] {
+		for _, y := range x {
+			// Put prefix comment above uncommented type blocks
+			print("FIRST LINE ", y[0], "\n")
+
+			for _, z := range y {
+				print(z, "\n")
+			}
+		}
+	}
+	print(sectMap[_t], "\n\n")
+
+	print("// section:", keywords[_c], "s\n\n")
+	print(sectMap[_c], "\n\n")
+	print("// section:", keywords[_v], "s\n\n")
+	print(sectMap[_v], "\n\n")
+	print("// section:", keywords[_f], "s\n\n")
+	for _, x := range fmap {
+		for _, y := range sectMap[5][x] {
+			for _, z := range y {
+				print(z)
+			}
 		}
 	}
 }
