@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/l0k1verloren/skele/pkg/def"
 	d "github.com/l0k1verloren/skele/pkg/def"
 
 	"git.parallelcoin.io/pod/pkg/util/base58"
@@ -197,6 +198,75 @@ func Hex(in string) (out d.Hex, err error) {
 	b, err = hex.DecodeString(in)
 	if err == nil {
 		out = d.Hex(b)
+	}
+	return
+}
+
+// ToType takes a string and a variable and attempts to decode the value according to the type of the variable
+func ToType(in string, T interface{}) (out interface{}, err error) {
+	switch T.(type) {
+	case def.Int:
+		var o def.Int
+		if o, err = Int(in); err == nil {
+			out = o
+		}
+	case def.Float:
+		var o def.Float
+		if o, err = Float(in); err == nil {
+			out = o
+		}
+	case def.Duration:
+		var o def.Duration
+		if o, err = Duration(in); err == nil {
+			out = o
+		}
+	case def.Time:
+		var o def.Time
+		if o, err = Time(in); err == nil {
+			out = o
+		}
+	case def.Date:
+		var o def.Date
+		if o, err = Date(in); err == nil {
+			out = o
+		}
+	case def.Size:
+		var o def.Size
+		if o, err = Size(in); err == nil {
+			out = o
+		}
+	case def.String:
+		var o def.String
+		if o, err = String(in); err == nil {
+			out = o
+		}
+	case def.Url:
+		var o def.Url
+		if o, err = URL(in); err == nil {
+			out = o
+		}
+	case def.Address:
+		var o def.Address
+		if o, err = Address(in); err == nil {
+			out = o
+		}
+	case def.Base58:
+		var o def.Base58
+		if o, err = Base58(in); err == nil {
+			out = o
+		}
+	case def.Base32:
+		var o def.Base32
+		if o, err = Base32(in); err == nil {
+			out = o
+		}
+	case def.Hex:
+		var o def.Hex
+		if o, err = Hex(in); err == nil {
+			out = o
+		}
+	default:
+		err = errors.New("unhandled type")
 	}
 	return
 }

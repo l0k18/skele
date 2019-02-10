@@ -29,8 +29,7 @@ type (
 	Base32List   [][]byte
 	Hex          string
 	HexList      []string
-
-	Key struct {
+	Key          struct {
 		Label    string
 		Template interface{}
 	}
@@ -63,10 +62,5 @@ var (
 	BASE32LIST   = Key{"base32list", *new(Base32)}
 	HEX          = Key{"hex", *new(Hex)}
 	HEXLIST      = Key{"hexlist", *new(HexList)}
-
-	HelpTypes = []string{
-		"pre",
-		"markdown",
-		"html",
-	}
+	HelpTypes    = []string{"pre", "markdown", "html"}
 )
