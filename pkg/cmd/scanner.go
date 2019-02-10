@@ -5,7 +5,7 @@ import (
 )
 
 // Scan is the parser, searches and fills variables and invokes scanner on child commands, runs functions if command has one
-func (c *command) Scan(args []string) error {
+func (c *cmd) Scan(args []string) error {
 	fmt.Print("scanning ")
 	// fmt.Println(c.Path())
 	// crsr := c.Cursor()
