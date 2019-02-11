@@ -166,7 +166,7 @@ func (c *cmd) Authors() []string {
 	return c.authors
 }
 
-// A sets the authors array
+// AUTH sets the authors array
 func (c *cmd) AUTH(in ...string) T.Cmd {
 	c.authors = in
 	return c
@@ -204,26 +204,12 @@ func (c *cmd) LCNS(in string) T.Cmd {
 	return c
 }
 
-// Inits returns the array of init functions stored in the command, that re run for a new instance
-func (c *cmd) Inits() (out []func(...interface{}) error) {
-	for _, item := range c.inits {
-		out = append(out, item)
-	}
-	return
-}
-
-// I loads the array of init functions
-func (c *cmd) INIT(in ...func(...interface{}) error) T.Cmd {
-	c.inits = in
-	return c
-}
-
-// Brief gets the brief text of a command
+// Description gets the brief text of a command
 func (c *cmd) Description() string {
 	return c.brief
 }
 
-// B sets the brief string of a command
+// DESC sets the brief string of a command
 func (c *cmd) DESC(in string) T.Cmd {
 	c.brief = in
 	return c
@@ -237,7 +223,7 @@ func (c *cmd) Help(t string) string {
 	return ""
 }
 
-// H sets one of the fields of a command's help
+// HELP sets one of the fields of a command's help
 func (c *cmd) HELP(t string, v string) T.Cmd {
 	c.help[t] = v
 	return c
@@ -248,7 +234,7 @@ func (c *cmd) Function() error {
 	return c.handler()
 }
 
-// F loads the handler for a command
+// FUNC loads the handler for a command
 func (c *cmd) FUNC(in func() error) T.Cmd {
 	c.handler = in
 	return c
@@ -270,7 +256,7 @@ func (c *cmd) Status() (s string) {
 	return
 }
 
-// E sets the error in a command
+// ERR sets the error in a command
 func (c *cmd) ERR(loglevel, err string) T.Cmd {
 	c.err = errors.New(err)
 	return c

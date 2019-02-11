@@ -16,8 +16,6 @@ type Cmd interface {
 	Function() error
 	HELP(string, string) Cmd
 	Help(string) string
-	INIT(...func(...interface{}) error) Cmd
-	Inits() []func(...interface{}) error
 	Item(int) Cmd
 	LCNS(string) Cmd
 	Len() int

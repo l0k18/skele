@@ -7,6 +7,8 @@ import (
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 var err error
@@ -14,8 +16,16 @@ var err error
 func main() {
 	if len(os.Args) > 1 {
 		if len(os.Args) > 2 {
+			if _, err := os.Stat(os.Args[2]); !os.IsNotExist(err) {
+				err = os.Remove(os.Args[2])
+				if err != nil {
+					fmt.Println(err)
+					panic(err)
+				}
+			}
 			out, err = os.OpenFile(os.Args[2], os.O_CREATE|os.O_RDWR, 0600)
 			if err != nil {
+				fmt.Println(err)
 				panic(err)
 			}
 		}
@@ -26,7 +36,7 @@ func main() {
 }
 
 func printHelp() {
-	print(`go source tidy
+	fmt.Printf(`go source tidy
 	
 usage:
 
@@ -54,12 +64,12 @@ usage:
 var sections [][][]string
 
 const (
-	_p = iota
-	_i
-	_t
-	_c
-	_v
-	_f
+	PACKAGE = iota
+	IMPORTS
+	TYPES
+	CONSTS
+	VARS
+	FUNCS
 )
 
 var out io.Writer = os.Stdout
@@ -89,127 +99,318 @@ func tidyFile() {
 			keyText = append(keyText, x)
 		}
 	}
+
 	li := getLineIter(lines)
-	var adjusted []int
+	adjusted := []int{0}
 	for i, x := range keyLines {
 		if i == 0 {
 			continue
 		}
 		li.i = x
-		for li.prev(); isComment(li.get()); li.prev() {
+		for li.prev(); isComment(li.get()) &&
+			li.i > 0; li.prev() {
 		}
 		adjusted = append(adjusted, li.i+1)
 	}
-	var i, prev int
+
+	var i int
+	var l []string
+	prev := adjusted[0]
 	sections = make([][][]string, 6)
 	for i = range adjusted {
-		l := lines[prev:adjusted[i]]
-		prev = adjusted[i]
-		var section []string
+		if i >= len(adjusted)-1 {
+			l = lines[adjusted[i]:]
+		} else {
+			l = lines[prev:adjusted[i+1]]
+			prev = adjusted[i+1]
+		}
+		section := []string{}
 		for _, x := range l {
 			section = append(section, x)
 		}
-		section = append(section, "")
+		// spew.Dump(section)
 		switch lines[keyLines[i]][0] {
 		case 'p':
-			sections[_p] = append(sections[_p], section)
+			sections[PACKAGE] = append(sections[PACKAGE], section)
 		case 'i':
-			sections[_i] = append(sections[_i], section)
+			sections[IMPORTS] = append(sections[IMPORTS], section)
 		case 't':
-			sections[_t] = append(sections[_t], section)
+			sections[TYPES] = append(sections[TYPES], section)
 		case 'c':
-			sections[_c] = append(sections[_c], section)
+			sections[CONSTS] = append(sections[CONSTS], section)
 		case 'v':
-			sections[_v] = append(sections[_v], section)
+			sections[VARS] = append(sections[VARS], section)
 		case 'f':
-			sections[_f] = append(sections[_f], section)
+			sections[FUNCS] = append(sections[FUNCS], section)
 		}
 	}
+
+	// for i, x := range sections {
+	// 	fmt.Println(i)
+	// 	spew.Dump(x)
+	// }
+
 	var sectMap []map[string]map[int][]string
-	for i := range sections {
+	for i, x := range sections {
 		sectMap = append(sectMap, make(map[string]map[int][]string))
-		for j := range sections[i] {
-			for _, x := range sections[i][j] {
-				if isComment(x) {
+		for j, y := range x {
+			for _, z := range y {
+				if isComment(z) {
 					continue
 				}
-				sectMap[i][x] = make(map[int][]string)
-				sectMap[i][x][j] = sections[i][j]
+				sectMap[i][z] = make(map[int][]string)
+				sectMap[i][z][j] = sections[i][j]
 				break
 			}
 		}
 	}
+	// for i, x := range sectMap {
+	// 	fmt.Println(i)
+	// 	spew.Dump(x)
+	// }
+
 	var fmap []string
-	for i := range sectMap[5] {
+	for i := range sectMap[FUNCS] {
 		fmap = append(fmap, i)
 	}
 	sort.Strings(fmap)
-	for _, x := range sectMap[_p] {
+
+	for _, x := range sectMap[PACKAGE] {
 		for _, y := range x {
 			for _, z := range y {
 				print(z, "\n")
 			}
 		}
+		print("\n")
 	}
-	print("// section:", keywords[_i], "s\n\n")
-	print("import (\n")
-	for _, x := range sectMap[_i] {
-		for _, y := range x {
-			sort.Strings(y)
-			var internal, external []string
-			for _, z := range y {
-				if strings.Contains(z, ".") {
-					external = append(external, z)
-				} else if strings.Contains(z, "\"") {
-					internal = append(internal, z)
+
+	if len(sectMap[IMPORTS]) > 0 {
+		print("import (\n")
+		for _, x := range sectMap[IMPORTS] {
+			for _, y := range x {
+				sort.Strings(y)
+				var internal, external []string
+				for _, z := range y {
+					if len(z) < 1 {
+						continue
+					}
+					if strings.Contains(z, ".") {
+						external = append(external, z)
+					} else if strings.Contains(z, "\"") {
+						internal = append(internal, z)
+					}
+				}
+				for _, a := range internal {
+					print(a, "\n")
+				}
+				if len(internal) > 0 {
+					print("\n")
+				}
+				bounds := false
+				for _, a := range external {
+					if a[:2] == "\t\"" {
+						print(a, "\n")
+					} else {
+						if !bounds {
+							bounds = true
+							print("\n")
+						}
+						print(a, "\n")
+					}
 				}
 			}
-			for _, a := range internal {
-				print(a, "\n")
-			}
-			print("\n")
-			for _, a := range external {
-				print(a, "\n")
+		}
+
+		print(")\n\n")
+	}
+
+	print("// section:", keywords[TYPES], "s\n\n")
+	if len(sectMap[TYPES]) > 0 {
+		print("type (\n")
+		for _, x := range sectMap[TYPES] {
+			for i, y := range x {
+				if len(y) == 0 {
+					continue
+				}
+				if i != 0 {
+					print("\n")
+				}
+				// Put prefix comment above uncommented type blocks
+				if y[0][0] != '/' {
+					print("\t// ")
+					if strings.Contains(y[0], "(") {
+						print("type block\n\n")
+					} else {
+						s := strings.Split(y[0], " ")
+						print(s[1], " is not documented\n")
+					}
+				}
+				for _, z := range y {
+					if len(z) > 4 && z[:5] == "type " {
+						z = z[5:]
+					}
+					if len(z) != 0 {
+						print("\t", z, "\n")
+					}
+				}
 			}
 		}
+		print(")\n\n")
 	}
-	print(")\n\n")
-	print("// section:", keywords[_t], "s\n\n")
-	for _, x := range sectMap[_t] {
-		for _, y := range x {
-			// Put prefix comment above uncommented type blocks
-			print("FIRST LINE ", y[0], "\n")
+	print("// section:", keywords[CONSTS], "s\n\n")
+	items := make(map[string][]string)
+	if len(sectMap[CONSTS]) > 0 {
+		print("const (\n")
+		// fmt.Println(sectMap[CONSTS])
+		var t = make([][]string, len(sectMap[CONSTS]))
+		for _, x := range sectMap[CONSTS] {
+			for j, y := range x {
+				for iter := getLineIter(y); ; iter.next() {
+					if iter.i > len(iter.ss)-2 {
+						break
+					}
+					v := iter.get()
+					if len(v) >= 7 && v[:7] == "const (" ||
+						len(v) > 0 && v[:1] == ")" {
+						y = append(y[:iter.i], y[iter.i+1:]...)
+					}
+					if len(v) < 1 ||
+						isComment(v) {
+						continue
+					}
+					b := strings.TrimSpace(v)
+					if b[0] >= 'A' && b[0] <= 'Z' {
+						var ii int
+						var xx rune
+						for ii, xx = range b {
+							if xx == ' ' || xx == '\t' {
+								break
+							}
+						}
 
-			for _, z := range y {
-				print(z, "\n")
+						expFunc := b[:ii]
+						for isComment(iter.prev()) && iter.bool {
+						}
+
+						for iter.next(); isComment(iter.get()); iter.next() {
+							t[j] = append(t[j], iter.get())
+						}
+
+						comment := "\t// " + expFunc + " is SHAZAM"
+						if len(t) < 2 {
+							t[j] = append(t[j], comment)
+							items[t[j][0]] = t[j]
+							t[j] = append(t[j], iter.get())
+						} else {
+							topline := t[j][0][3:]
+							switch {
+							case topline[:2] == "A ":
+								topline = topline[2:]
+							case topline[:4] == "The ":
+								topline = topline[4:]
+							}
+							if topline[:len(expFunc)] == expFunc {
+								items[t[j][0]] = t[j]
+							} else {
+								t[j] = append(t[j], iter.get())
+								t[j] = append(t[j], comment)
+								items[t[j][0]] = t[j]
+							}
+						}
+					}
+				}
+				for _, g := range t[j] {
+					fmt.Println(g)
+				}
+				for _, g := range items {
+					spew.Dump(g)
+				}
+				var tmp []string
+				for i := range items {
+					tmp = append(tmp, i)
+				}
+				y = nil
+				sort.Strings(tmp)
+				for i, z := range tmp {
+					fmt.Println(i, z)
+					y = append(y, z)
+				}
+				spew.Dump(y)
+				for i, z := range y {
+					// if len(z) < 1 {
+					// 	continue
+					// }
+					if z != "const (" &&
+						z != ")" &&
+						i > 0 {
+						prev := y[i-1]
+						if !isComment(prev) {
+							b := strings.TrimSpace(z)
+							if b[0] >= 'A' && b[0] <= 'Z' {
+								var ii int
+								var xx rune
+								for ii, xx = range b {
+									if xx == ' ' || xx == '\t' {
+										break
+									}
+								}
+								print("\t// ", b[:ii], " is")
+							}
+						}
+						if i > 0 {
+							print("\n")
+						}
+					}
+					print(z, "\n")
+					if len(z) > 5 && z[:6] == "const " {
+						z = z[6:]
+					}
+				}
 			}
 		}
+		print(")\n\n")
 	}
-	print(sectMap[_t], "\n\n")
 
-	print("// section:", keywords[_c], "s\n\n")
-	print(sectMap[_c], "\n\n")
-	print("// section:", keywords[_v], "s\n\n")
-	print(sectMap[_v], "\n\n")
-	print("// section:", keywords[_f], "s\n\n")
-	for _, x := range fmap {
-		for _, y := range sectMap[5][x] {
-			for _, z := range y {
-				print(z)
+	if len(sectMap[VARS]) > 0 {
+		print("var (\n")
+		for _, x := range sectMap[VARS] {
+			for _, y := range x {
+				for _, z := range y {
+					if len(z) < 1 {
+						continue
+					}
+					if z != "var (" && z != ")" {
+						if z[0] == '/' {
+							z = "\t" + z
+						}
+						if len(z) > 3 && z[:4] == "var " {
+							z = "\t" + z[4:]
+						}
+						print(z, "\n")
+					}
+				}
+			}
+		}
+		print(")\n\n")
+	}
+
+	print("// section:", keywords[FUNCS], "s\n\n")
+	if len(sectMap[FUNCS]) > 0 {
+		for _, x := range sectMap[FUNCS] {
+			for _, y := range x {
+				for _, z := range y {
+					print(z, "\n")
+				}
 			}
 		}
 	}
 }
 
 func isComment(l string) bool {
-	if len(l) > 1 {
-		x := 0
-		// skip spaces
-		for ; charIsOneOf(l[x], '\t', ' '); x++ {
-		}
-		if l[x:x+2] == "//" {
-			return true
-		}
+	t := strings.TrimSpace(l)
+	if len(t) > 1 &&
+		t[:2] == "//" {
+		return true
 	}
 	return false
 }
@@ -264,9 +465,16 @@ func (r *iL) prev() string {
 		r.i--
 		return r.ss[r.i]
 	}
+	r.bool = false
 	return ""
 }
 
 func (r *iL) get() string {
+	r.bool = true
+	if r.i > len(r.ss)-1 {
+		r.i = len(r.ss) - 1
+		r.bool = false
+		return ""
+	}
 	return r.ss[r.i]
 }
