@@ -47,12 +47,12 @@ func Date(in string) (out T.Date, err error) {
 
 const (
 	zero int64 = 0
-	one  int64 = 1
-	kB   int64 = 1024
-	mB   int64 = 1024 * kB
-	gB   int64 = 1024 * mB
-	tB   int64 = 1024 * gB
-	pB   int64 = 1024 * tB
+	one        = zero + 1
+	kB         = one * 1024
+	mB         = kB * kB
+	gB         = mB * kB
+	tB         = gB * kB
+	pB         = tB * kB
 
 	kiB int64 = 1000
 	miB int64 = 1000 * kiB
