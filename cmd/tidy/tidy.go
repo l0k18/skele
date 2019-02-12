@@ -1,3 +1,4 @@
+// this is a test
 package main
 
 import (
@@ -5,6 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 type imported struct {
@@ -26,12 +29,25 @@ const (
 )
 
 var (
-	sections [][][]string
-	out      = os.Stdout
-	err      error
+	out = os.Stdout
+	err error
 )
 
+type sections struct {
+	p []string
+	i [][]string
+	t [][]string
+	c [][]string
+	v [][]string
+	f [][]string
+}
+
 func main() {
+	if len(os.Args) > 2 {
+		out, _ = os.Create(os.Args[2])
+		defer out.Close()
+	}
+
 	var splitted []string
 	if len(os.Args) > 1 {
 		b, err := ioutil.ReadFile(os.Args[1])
@@ -41,22 +57,82 @@ func main() {
 		splitted = strings.Split(string(b), "\n")
 		splitted = rejoinSplitLines(splitted)
 		splitted = clean(splitted)
+		gathered := gather(splitted)
+		_ = gathered
+		// spew.Fdump(out, gathered)
 	} else {
 		printHelp()
 	}
-	if len(os.Args) > 2 {
-		out, _ = os.Create(os.Args[2])
-		printStrings(splitted)
-		out.Close()
-	}
 }
+func gather(l []string) (s *sections) {
+	s = &sections{
+		make([]string, 1),
+		make([][]string, 1),
+		make([][]string, 1),
+		make([][]string, 1),
+		make([][]string, 1),
+		make([][]string, 1),
+	}
+
+	iter := getLineIter(l)
+	for i := iter.next(); iter.moved; i = iter.next() {
+		// i = iter.next()
+		if hasRootKeyword(i) {
+			for iter.i >= 0 && isComment(iter.prev()) && iter.i > 0 {
+				fmt.Println("backed up")
+			}
+			s.p = append(s.p, i)
+			i = iter.next()
+			switch {
+			case len(i) > 8 && i[:8] == "package ":
+				passed := false
+				for {
+					if len(i) > 8 && i[:8] == "package " {
+						passed = true
+					}
+					s.p = append(s.p, i)
+					if passed && hasRootKeyword(i) {
+						break
+					}
+				}
+			case len(i) > 7 && i[:7] == "import ":
+				ii := &s.i[len(s.i)-1]
+				for {
+					i = iter.next()
+					if hasRootKeyword(i) {
+						break
+					}
+					ii = append(ii, i)
+				}
+			case len(i) > 5 && i[:5] == "type ":
+				ii := &s.i[len(s.i)-1]
+				for {
+					i = iter.next()
+					if hasRootKeyword(i) {
+						break
+					}
+					ii = append(*ii, i)
+				}
+			case len(i) > 6 && i[:6] == "const ":
+				spew.Dump(i)
+			case len(i) > 4 && i[:4] == "var ":
+				spew.Dump(i)
+			case len(i) > 5 && i[:5] == "func ":
+				spew.Dump(i)
+			default:
+				fmt.Println("fallen throuugh")
+			}
+		}
+	}
+	spew.Fdump(out, s)
+	return
+}
+
 func clean(l []string) (lines []string) {
-	q := 0
+	q, i := 0, 0
 	bo, ao, qo := false, false, false
 	escaped := false
 	found := false
-	i := 0
-	_ = i
 	x := ""
 	for i, x = range l {
 		// time.Sleep(time.Second / 50)
@@ -146,7 +222,7 @@ func rejoinSplitLines(s []string) []string {
 	ignoreList := []string{"import (", "var (", "const (", "type ("}
 	continuers := []byte{'{', '(', ',', '+', '-', '&', '|', '=', '*', '/', '.'}
 	iter := getLineIter(s)
-	current := iter.get()
+	current := iter.next()
 	for {
 		lastChar := getNthLastChar(current, 1)
 		if isComment(current) {
@@ -341,7 +417,7 @@ type iL struct {
 }
 
 func getLineIter(s []string) iL {
-	return iL{s, 0, true}
+	return iL{s, -1, true}
 }
 func (r *iL) next() string {
 	r.moved = true
@@ -365,7 +441,7 @@ func (r *iL) get() string {
 	r.moved = true
 	if r.i > len(r.ss)-1 {
 		r.i = len(r.ss) - 1
-		r.moved = false
+		r.moved = true
 		return ""
 	}
 	return r.ss[r.i]
