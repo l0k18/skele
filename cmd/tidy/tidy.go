@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+	"time"
 )
 
 type imported struct {
@@ -28,94 +28,62 @@ const (
 
 var (
 	sections [][][]string
-	out      io.Writer = os.Stdout
+	out      = os.Stdout
 	err      error
 )
 
 func main() {
 
-	if len(
-		os.
-			Args,
-	) > 1 {
+	if len(os.Args) > 1 {
 
-		if len(
-			os.
-				Args,
-		) > 2 {
+		b, err :=
+			ioutil.ReadFile(
+				os.Args[1],
+			)
+		if err !=
+			nil {
 
-			if _, err :=
-				os.
-					Stat(
-						os.
-							Args[2],
-					); !os.
-				IsNotExist(
-					err,
-				) {
-
-				err = os.
-					Remove(
-						os.
-							Args[2],
-					)
-				if err !=
-					nil {
-
-					fmt.
-						Println(
-							err,
-						)
-					panic(
-						err,
-					)
-				}
-			}
-
-			out, err = os.
-				OpenFile(
-					os.
-						Args[2],
-					os.
-						O_CREATE|
-						os.
-							O_RDWR,
-					0600,
-				)
-			if err != nil {
-
-				fmt.Println(err)
-				panic(err)
-			}
-		}
-
-		b, err := ioutil.ReadFile(os.Args[1])
-		if err != nil {
-
-			panic(err)
+			panic(
+				err,
+			)
 		}
 		var splitted []string
-		splitted = strings.Split(string(b), "\n")
-		splitted = rejoinSplitLines(splitted)
-		splitted = clean(splitted)
-		printStrings(splitted)
-		_ = splitted
+		splitted =
+			strings.Split(
+				string(b), "\n",
+			)
+		splitted =
+			rejoinSplitLines(
+				splitted,
+			)
+		splitted =
+			clean(
+				splitted,
+			)
+		_ =
+			splitted
 	} else {
 
 		printHelp()
 	}
 }
 
-func clean(l []string) (lines []string) {
+func clean(
+	l []string,
+) (
+	lines []string,
+) {
 
 	q := 0
 	bo, ao, qo := false, false, false
 	escaped := false
+	found := false
 	i := 0
 	_ = i
 	x := ""
 	for i, x = range l {
 
+		time.Sleep(time.Second / 50)
 		for _, y := range x {
 
 			switch y {
@@ -173,16 +141,44 @@ func clean(l []string) (lines []string) {
 
 			q = 0
 		}
-		if ao || bo || qo {
-			fmt.Println(i, x)
-		} else {
-			l[i] = removeDoubleWhitespace(x)
-			l[i] = strings.TrimSpace(l[i])
 
+		if found {
+
+			found = false
+		} else {
+
+			if i >= len(l) {
+
+				continue
+			}
+			if len(l[i]) > 0 {
+
+				l[i] = strings.TrimSpace(l[i])
+				l[i] = removeDoubleWhitespace(x)
+			} else {
+
+				if i < len(l) {
+
+					l = append(l[:i], l[i+1:]...)
+				}
+			}
+		}
+
+		if ao || bo || qo {
+
+			found = true
+		} else if i < len(l) {
+
+			l[i] = strings.TrimSpace(l[i])
+		}
+		if len(os.Args) > 2 {
+
+			out, _ = os.Create(os.Args[2])
+			printStrings(l)
+			out.Close()
 		}
 	}
 
-	lines = l
 	return
 }
 
@@ -284,6 +280,14 @@ func rejoinSplitLines(
 			}
 		}
 	next:
+		time.Sleep(time.Second / 50)
+		if len(os.Args) > 2 {
+
+			out, _ = os.Create(os.Args[2])
+			printStrings(s)
+			out.Close()
+		}
+
 		current = iter.next()
 		if !iter.moved {
 
