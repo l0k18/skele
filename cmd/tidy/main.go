@@ -8,22 +8,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/parallelcointeam/skele/cmd/tidy/its1"
 	"github.com/parallelcointeam/skele/cmd/tidy/its2"
-)
-
-type ()
-
-//
-//
-var (
-	e               error
-	infile, outfile string
-	f               *os.File
-	readBuffer      []byte
-	lineBuffer      []string
-	sectBuffer      [][]string
-	chute           int
 )
 
 // main entrypoint to tidy
@@ -56,7 +43,7 @@ func main() {
 	if e := scanner.Err(); e != nil {
 		panic(e)
 	}
-	lineBuffer = removeBlankLines(lineBuffer)
+	// lineBuffer = removeBlankLines(lineBuffer)
 	sectBuffer = section(lineBuffer)
 }
 
@@ -69,33 +56,59 @@ func removeBlankLines(in []string) (out []string) {
 	return
 }
 
-func section(s1 []string) (s2 [][]string) {
-	var keyList []int
+func section(s1 []string) (s2 [][][]string) {
+	var keyList []sectMap
 	i1 := its1.Create(s1)
+	// find and gather line numbers of all root level keywords at the start of the line
 	for i1.Goto(0); i1.OK(); {
 		if its2.IsKey(i1.Get()) {
-			keyList = append(keyList, i1.Cur())
+			i := map[string]transMap{
+				i1.Get(): transMap{i1.Cur(), i1.Cur()},
+			}
+			keyList = append(keyList, i)
 		}
 		i1.Next()
 	}
 	i1.Goto(0)
-	for i, x := range keyList {
-		i1.Goto(x - 1)
-		for ; i1.MatchStart("//") && i1.Cur() > 0; i1.Prev() {
+	// find the start of the comments above each section
+	for _, x := range keyList {
+		for _, y := range x {
+			i1.Goto(y.line - 1)
+			for ; i1.MatchStart("//") && i1.Cur() > 0; i1.Prev() {
+				y.line = i1.Cur() + 1
+			}
 		}
-		keyList[i] = i1.Cur() + 1
 	}
 	i1.Goto(0)
-	// fmt.Println(keyList)
-	for i := range keyList {
-		if i > 0 {
-			// fmt.Println("to end", keyList[i])
-			for i1.Cur() < keyList[i] {
-				fmt.Println(i1.Next())
-			}
-			fmt.Println("///////////////////////////////////////////////////////////////", i)
-		}
-	}
+	spew.Dump(keyList)
+	// // Sort the keyList
+	// sectText := make([][]string, len(its2.Keys))
+	// for i, x := range keyList {
+	// 	for j := range x {
+	// 		sectText[i] = append(sectText[i], j)
+	// 	}
+	// }
+	// spew.Dump(sectText)
+	// i2 := its2.Create(sectText)
+	// var sections [][]string
+	// for i2.OK() {
+	// 	for i2.OK() {
+	// 		c := i2.Next()
+	// 		for i, x := range its2.Keys {
+	// 			if i2.MatchStart(x) {
+	// 				sections[i] = append(sections[i], c)
+	// 			}
+	// 		}
+	// 	}
+	// 	if i2.CurSlot() < len(its2.Keys) {
+	// 		i2.Sel(its2.Keys[i2.CurSlot()+1])
+	// 	}
+	// }
+	// for i := range sections {
+	// 	sort.Strings(sections[i])
+	// }
+	// spew.Dump(sections)
+	// spew.Dump(sectText)
 	return
 }
 
@@ -120,8 +133,28 @@ reads go source files, cleans and cuts them into individual declarations, groups
 
 use 'stdin' as filename to read from stdin
 
-multiple source files concatenated and fed to stdin automatically consolidates the imports, but will error if there is more than one package specified - and duplicate symbols are not handled automatically
+multiple source files concatenated and fed to stdin automatically consolidates the imports, but will error if there is more than one package specified - and duplicate file scope symbols are not handled automatically
 
 `)
 	os.Exit(1)
 }
+
+type (
+	transMap struct {
+		line int
+		key  int
+	}
+	sectMap map[string]transMap
+)
+
+//
+//
+var (
+	e               error
+	infile, outfile string
+	f               *os.File
+	readBuffer      []byte
+	lineBuffer      []string
+	sectBuffer      [][][]string
+	chute           int
+)

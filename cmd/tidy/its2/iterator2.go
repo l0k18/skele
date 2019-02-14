@@ -77,6 +77,11 @@ func (i *Iter2) Sel(s string) {
 	}
 }
 
+// CurSlot returns the current slot that is active
+func (i *Iter2) CurSlot() int {
+	return i.x
+}
+
 // MatchStart returns true if the string is a (sub) string of the current item from the start of the line
 func (i *Iter2) MatchStart(s string) bool {
 	i.e = nil
