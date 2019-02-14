@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/parallelcointeam/skele/cmd/tidy/its1"
 	"github.com/parallelcointeam/skele/cmd/tidy/its2"
 )
@@ -56,60 +56,112 @@ func removeBlankLines(in []string) (out []string) {
 	return
 }
 
+// token long comment
+//
+//
+//
 func section(s1 []string) (s2 [][][]string) {
-	var keyList []sectMap
+	keyMap := make(sectMap)
+	var keyList []int
 	i1 := its1.Create(s1)
 	// find and gather line numbers of all root level keywords at the start of the line
 	for i1.Goto(0); i1.OK(); {
 		if its2.IsKey(i1.Get()) {
-			i := map[string]transMap{
-				i1.Get(): transMap{i1.Cur(), i1.Cur()},
-			}
-			keyList = append(keyList, i)
+			// This makes a map between key lines and their original position
+			keyMap[i1.Get()] = append(keyMap[i1.Get()], i1.Cur())
+			// This allows finding the ends of each position from the original
+			keyList = append(keyList, i1.Cur())
 		}
 		i1.Next()
 	}
-	i1.Goto(0)
 	// find the start of the comments above each section
-	for _, x := range keyList {
-		for _, y := range x {
-			i1.Goto(y.line - 1)
-			for ; i1.MatchStart("//") && i1.Cur() > 0; i1.Prev() {
-				y.line = i1.Cur() + 1
+	for i, x := range keyMap {
+		i1.Goto(x[0])
+		for {
+			// fmt.Println()
+			i1.Prev()
+			for ; i1.MatchStart("//") && i1.Cur() > 1; i1.Prev() {
+				fmt.Println(i1.Cur(), i1.Get())
 			}
+			if strings.Contains(i1.Get(), "*/") {
+				for ; !i1.MatchStart("/*"); i1.Prev() {
+				}
+			}
+			if !i1.MatchStart("//") ||
+				!i1.MatchStart("/*") ||
+				i1.Cur() == 0 {
+				if len(i1.Get()) < 1 {
+					i1.Next()
+				}
+				keyMap[i] = append(keyMap[i], i1.Cur())
+				fmt.Println(x, i)
+				fmt.Println("FOUND @", i1.Cur(), "::", i1.Next(), "::", i1.Next(), "::", i1.Next())
+				break
+			}
+			i1.Next()
+			keyMap[i] = append(keyMap[i], i1.Cur())
 		}
 	}
 	i1.Goto(0)
-	spew.Dump(keyList)
-	// // Sort the keyList
-	// sectText := make([][]string, len(its2.Keys))
-	// for i, x := range keyList {
-	// 	for j := range x {
-	// 		sectText[i] = append(sectText[i], j)
-	// 	}
-	// }
-	// spew.Dump(sectText)
-	// i2 := its2.Create(sectText)
-	// var sections [][]string
-	// for i2.OK() {
-	// 	for i2.OK() {
-	// 		c := i2.Next()
-	// 		for i, x := range its2.Keys {
-	// 			if i2.MatchStart(x) {
-	// 				sections[i] = append(sections[i], c)
-	// 			}
-	// 		}
-	// 	}
-	// 	if i2.CurSlot() < len(its2.Keys) {
-	// 		i2.Sel(its2.Keys[i2.CurSlot()+1])
-	// 	}
-	// }
-	// for i := range sections {
-	// 	sort.Strings(sections[i])
-	// }
-	// spew.Dump(sections)
-	// spew.Dump(sectText)
+
+	// spew.Dump(keyMap)
+
+	var sorted []string
+	for x := range keyMap {
+		sorted = append(sorted, x)
+	}
+	sort.Strings(sorted)
+
+	// spew.Dump(sorted)
+
+	for i, x := range keyMap {
+		for j, y := range keyList {
+			if x[0] == y && j < len(keyList)-1 {
+				keyMap[i] = append(x, keyList[j+1])
+			}
+		}
+	}
+	// spew.Dump(keyMap)
+
+	collated := make(map[string][]string)
+	for _, x := range its2.Keys {
+		collated[x] = []string{}
+	}
+	for _, x := range sorted {
+		for j, y := range keyMap {
+			if x == j {
+				kk := strings.Split(x, " ")
+				keyword := kk[0]
+				start := y[1]
+				end := len(s1) - 1
+				if len(y) > 2 {
+					end = y[2]
+				}
+				for i := start; i < end-1; i++ {
+					collated[keyword] = append(collated[keyword], s1[i])
+				}
+			}
+		}
+	}
+
+	for _, x := range its2.Keys {
+		fmt.Println("//", x)
+		for _, y := range collated[x] {
+			fmt.Println("\t", y)
+		}
+	}
+
 	return
+}
+
+// match returns true if the second string is at least as long and the second string's first part matches the first
+func match(s1, s2 string) bool {
+	if len(s1) <= len(s2) {
+		if s1 == s2[:len(s1)] {
+			return true
+		}
+	}
+	return false
 }
 
 // hasKey returns true if a key was found in the line
@@ -139,22 +191,22 @@ multiple source files concatenated and fed to stdin automatically consolidates t
 	os.Exit(1)
 }
 
-type (
-	transMap struct {
-		line int
-		key  int
-	}
-	sectMap map[string]transMap
-)
+// sectMap stores the key lines mapped to their original line position and allows
+type sectMap map[string][]int
 
+// token constant
+const pi = 3.1415927
+
+// error
 //
-//
-var (
-	e               error
-	infile, outfile string
-	f               *os.File
-	readBuffer      []byte
-	lineBuffer      []string
-	sectBuffer      [][][]string
-	chute           int
-)
+var e error
+var infile, outfile string
+var f *os.File
+var readBuffer []byte
+var lineBuffer []string
+
+/* token multiline
+comment
+*/
+var sectBuffer [][][]string
+var chute int

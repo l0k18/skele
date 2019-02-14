@@ -24,7 +24,7 @@ func Create(s []string) (S *Iter) {
 // Next returns the current item and increments the cursor, setting an error if the cursor is at the end
 func (i *Iter) Next() (s string) {
 	i.e = nil
-	if i.x < len(i.s)-1 {
+	if i.x < len(i.s)-2 {
 		s = i.s[i.x]
 		i.x++
 		return
