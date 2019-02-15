@@ -13,11 +13,65 @@ import (
 	"github.com/l0k1verloren/skele/pkg/T"
 )
 
-// Int tries to read an integer from a string
-func Int(in string) (out T.Int, err error) {
-	var i int64
-	i, err = strconv.ParseInt(in, 10, 64)
-	return T.Int(i), err
+const (
+	zero int64 = 0
+	one        = zero + 1
+
+	kB = one * 1024
+	mB = kB * kB
+
+	gB = mB * kB
+	tB = gB * kB
+	pB = tB * kB
+
+	kiB int64 = 1000
+	miB int64 = 1000 * kiB
+	giB int64 = 1000 * miB
+
+	tiB int64 = 1000 * giB
+	piB int64 = 1000 * tiB
+)
+
+// Address takes a string and tries to get an IPv4 or IPv6 address
+func Address(in string) (out T.Address, err error) {
+	var u *url.URL
+	u, err = url.Parse(in)
+	if err == nil {
+		scheme := u.Scheme
+		host := u.Host
+		out = T.Address(scheme + "://" + host)
+	}
+	return
+}
+
+// Base32 takes a string and tries to read base32 from it
+func Base32(in string) (out T.Base32, err error) {
+	var b []byte
+	b, err = base32.StdEncoding.DecodeString(strings.ToUpper(in))
+	if err == nil {
+		out = T.Base32(b)
+	}
+	return
+}
+
+// Base58 takes a string and tries to read a base58check binary value
+func Base58(in string) (out T.Base58, err error) {
+	var r []byte
+	var v byte
+	r, v, err = base58.CheckDecode(in)
+	return append(append(out, v), r...), err
+}
+
+// Date takes a string and tries to read a date in yyyy-mm-dd format
+func Date(in string) (out T.Date, err error) {
+	t, err := time.Parse("2006-01-02", in)
+	return T.Date(t), err
+}
+
+// Duration takes a string and tries to read a duration in Golang time.Duration format
+func Duration(in string) (out T.Duration, err error) {
+	o, err := time.ParseDuration(in)
+	return T.Duration(o), err
 }
 
 // Float tries to read a floating point number from a string
@@ -27,39 +81,22 @@ func Float(in string) (out T.Float, err error) {
 	return T.Float(i), err
 }
 
-// Duration takes a string and tries to read a duration in Golang time.Duration format
-func Duration(in string) (out T.Duration, err error) {
-	o, err := time.ParseDuration(in)
-	return T.Duration(o), err
+// Hex takes a string and tries to read a hex string, including potentially the 0x prefix
+func Hex(in string) (out T.Hex, err error) {
+	var b []byte
+	b, err = hex.DecodeString(in)
+	if err == nil {
+		out = T.Hex(b)
+	}
+	return
 }
 
-// Time takes a string and tries to read a time specification from it (time of day) as simple 24 hour HH:MM:SS format
-func Time(in string) (out T.Time, err error) {
-	t, err := time.Parse("15:04:05", in)
-	return T.Time(t), err
+// Int tries to read an integer from a string
+func Int(in string) (out T.Int, err error) {
+	var i int64
+	i, err = strconv.ParseInt(in, 10, 64)
+	return T.Int(i), err
 }
-
-// Date takes a string and tries to read a date in yyyy-mm-dd format
-func Date(in string) (out T.Date, err error) {
-	t, err := time.Parse("2006-01-02", in)
-	return T.Date(t), err
-}
-
-const (
-	zero int64 = 0
-	one        = zero + 1
-	kB         = one * 1024
-	mB         = kB * kB
-	gB         = mB * kB
-	tB         = gB * kB
-	pB         = tB * kB
-
-	kiB int64 = 1000
-	miB int64 = 1000 * kiB
-	giB int64 = 1000 * miB
-	tiB int64 = 1000 * giB
-	piB int64 = 1000 * tiB
-)
 
 // Size accepts a string and returns a value representing bytes, using the following annotations:
 // kKmMgGtTpP single letter for power of 2 based size
@@ -150,54 +187,10 @@ func String(in string) (out T.String, err error) {
 	return T.String(in), nil
 }
 
-// URL takes a string and tries to construct a full URL from it based on assuming http from first slash after domain name, can include a port
-func URL(in string) (out T.Url, err error) {
-	var u *url.URL
-	u, err = url.Parse(in)
-	if err == nil {
-		out = T.Url(u.String())
-	}
-	return
-}
-
-// Address takes a string and tries to get an IPv4 or IPv6 address
-func Address(in string) (out T.Address, err error) {
-	var u *url.URL
-	u, err = url.Parse(in)
-	if err == nil {
-		scheme := u.Scheme
-		host := u.Host
-		out = T.Address(scheme + "://" + host)
-	}
-	return
-}
-
-// Base58 takes a string and tries to read a base58check binary value
-func Base58(in string) (out T.Base58, err error) {
-	var r []byte
-	var v byte
-	r, v, err = base58.CheckDecode(in)
-	return append(append(out, v), r...), err
-}
-
-// Base32 takes a string and tries to read base32 from it
-func Base32(in string) (out T.Base32, err error) {
-	var b []byte
-	b, err = base32.StdEncoding.DecodeString(strings.ToUpper(in))
-	if err == nil {
-		out = T.Base32(b)
-	}
-	return
-}
-
-// Hex takes a string and tries to read a hex string, including potentially the 0x prefix
-func Hex(in string) (out T.Hex, err error) {
-	var b []byte
-	b, err = hex.DecodeString(in)
-	if err == nil {
-		out = T.Hex(b)
-	}
-	return
+// Time takes a string and tries to read a time specification from it (time of day) as simple 24 hour HH:MM:SS format
+func Time(in string) (out T.Time, err error) {
+	t, err := time.Parse("15:04:05", in)
+	return T.Time(t), err
 }
 
 // ToType takes a string and a variable and attempts to decode the value according to the type of the variable
@@ -265,6 +258,16 @@ func ToType(in string, I interface{}) (out interface{}, err error) {
 		}
 	default:
 		err = errors.New("unhandled type")
+	}
+	return
+}
+
+// URL takes a string and tries to construct a full URL from it based on assuming http from first slash after domain name, can include a port
+func URL(in string) (out T.Url, err error) {
+	var u *url.URL
+	u, err = url.Parse(in)
+	if err == nil {
+		out = T.Url(u.String())
 	}
 	return
 }

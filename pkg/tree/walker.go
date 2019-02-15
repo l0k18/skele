@@ -2,17 +2,17 @@ package tree
 
 import "github.com/l0k1verloren/skele/pkg/T"
 
-var _ T.Cursor = new(walker)
-
 // walker is a way to get around the Command tree
 type walker struct {
 	cmd      T.Cmd
 	position int
 }
 
-// Walker returns a cursor given a Commander. The index is -1 so that a loop can pre-increment and start at zero
-func Walker(C T.Cmd) T.Cursor {
-	return &walker{C, -1}
+var _ T.Cursor = new(walker)
+
+// Cmd just returns the Commander inside it
+func (c *walker) Cmd() T.Cmd {
+	return c.cmd
 }
 
 // In goes up to the parent of the current node
@@ -25,9 +25,13 @@ func (c *walker) In() (did bool) {
 	return
 }
 
-// Out walks outwards on a KV containing a Commander, returns true if it walked
-func (c *walker) Out() (b bool) {
-	c.cmd.Item(c.position).Len()
+// Item returns the item under the cursor
+func (c *walker) Item() (p T.Cmd) {
+	if c.cmd.Len() > c.position {
+		return c.cmd.Item(c.position)
+	}
+	c.cmd.ERR("warn", "somehow cursor fell off the edge, moving back to edge")
+	c.position = c.cmd.Len() - 1
 	return
 }
 
@@ -43,6 +47,16 @@ func (c *walker) Next() (did bool) {
 	return
 }
 
+// Out walks outwards on a KV containing a Commander, returns true if it walked
+func (c *walker) Out() (b bool) {
+	c.cmd.Item(c.position).Len()
+	return
+}
+
+func (c *walker) Position() int {
+	return c.position
+}
+
 // Prev steps back in the current Pair Slice
 func (c *walker) Prev() (b bool) {
 	if c.position > 0 {
@@ -53,21 +67,9 @@ func (c *walker) Prev() (b bool) {
 	return
 }
 
-// Item returns the item under the cursor
-func (c *walker) Item() (p T.Cmd) {
-	if c.cmd.Len() > c.position {
-		return c.cmd.Item(c.position)
-	}
-	c.cmd.ERR("warn", "somehow cursor fell off the edge, moving back to edge")
-	c.position = c.cmd.Len() - 1
-	return
+// Walker returns a cursor given a Commander. The index is -1 so that a loop can pre-increment and start at zero
+func Walker(C T.Cmd) T.Cursor {
+	return &walker{C, -1}
 }
 
-// Cmd just returns the Commander inside it
-func (c *walker) Cmd() T.Cmd {
-	return c.cmd
-}
 
-func (c *walker) Position() int {
-	return c.position
-}

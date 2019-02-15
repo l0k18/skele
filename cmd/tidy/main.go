@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/parallelcointeam/skele/cmd/tidy/its1"
 	"github.com/parallelcointeam/skele/cmd/tidy/its2"
 )
@@ -18,9 +17,10 @@ import (
 func main() {
 	if len(os.Args) > 1 {
 		infile = os.Args[1]
-		if infile == "stdin" {
+		switch infile {
+		case "stdin":
 			f = os.Stdin
-		} else {
+		default:
 			if readBuffer, e = ioutil.ReadFile(os.Args[1]); e != nil {
 				panic(e)
 			}
@@ -28,13 +28,12 @@ func main() {
 	} else {
 		printHelp()
 	}
+	outfile = infile
 	if len(os.Args) > 2 {
 		outfile = os.Args[2]
-		if f, e = os.Create(outfile); e != nil {
-			panic(e)
-		}
-	} else {
-		f = os.Stdout
+	}
+	if f, e = os.Create(outfile); e != nil {
+		panic(e)
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(readBuffer)))
 	scanner.Split(bufio.ScanLines)
@@ -46,6 +45,7 @@ func main() {
 	}
 	// lineBuffer = removeBlankLines(lineBuffer)
 	sectBuffer = section(lineBuffer)
+	fmt.Fprintln(f, sectBuffer)
 }
 
 func removeBlankLines(in []string) (out []string) {
@@ -61,7 +61,7 @@ func removeBlankLines(in []string) (out []string) {
 //
 //
 //
-func section(s1 []string) (s2 [][][]string) {
+func section(s1 []string) (s2 string) {
 	keyMap := make(sectMap)
 	i1 := its1.Create(s1)
 	// find and gather line numbers of all root level keywords at the start of the line
@@ -157,10 +157,7 @@ func section(s1 []string) (s2 [][][]string) {
 	sort.Ints(sectMarkers)
 
 	var output [][]string
-	spew.Dump(skm)
-	spew.Dump(keyMap)
 	for _, x := range skm {
-		fmt.Println(x)
 		start := keyMap[x][1]
 		end := start
 		for j, y := range sectMarkers {
@@ -179,17 +176,18 @@ func section(s1 []string) (s2 [][][]string) {
 			oi := its1.Create(output[i])
 			oi.Last()
 			if oi.Len() < 1 {
-				spew.Dump(output[i])
 				output[i] = x[:oi.Cur()]
-				spew.Dump(output[i])
 				continue
 			}
 			break
 		}
 	}
-
-	spew.Dump(output)
-
+	for _, x := range output {
+		for _, y := range x {
+			s2 += y + "\n"
+		}
+		s2 += "\n"
+	}
 	return
 }
 
@@ -249,7 +247,7 @@ var lineBuffer []string
 /* token multiline
 comment
 */
-var sectBuffer [][][]string
+var sectBuffer string
 var chute int
 
 // IsKey returns true if the string has one of the keys at the start
