@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/parallelcointeam/skele/cmd/tidy/its1"
 	"github.com/parallelcointeam/skele/cmd/tidy/its2"
 )
@@ -62,26 +63,26 @@ func removeBlankLines(in []string) (out []string) {
 //
 func section(s1 []string) (s2 [][][]string) {
 	keyMap := make(sectMap)
-	var keyList []int
 	i1 := its1.Create(s1)
 	// find and gather line numbers of all root level keywords at the start of the line
-	for i1.Goto(0); i1.OK(); {
+	for i1.Zero(); i1.OK(); {
 		if its2.IsKey(i1.Get()) {
 			// This makes a map between key lines and their original position
 			keyMap[i1.Get()] = append(keyMap[i1.Get()], i1.Cur())
-			// This allows finding the ends of each position from the original
-			keyList = append(keyList, i1.Cur())
 		}
 		i1.Next()
 	}
+
 	// find the start of the comments above each section
 	for i, x := range keyMap {
 		i1.Goto(x[0])
 		for {
-			// fmt.Println()
 			i1.Prev()
+			if IsKey(i1.Get()) {
+				keyMap[i] = append(keyMap[i], keyMap[i][0])
+				break
+			}
 			for ; i1.MatchStart("//") && i1.Cur() > 1; i1.Prev() {
-				fmt.Println(i1.Cur(), i1.Get())
 			}
 			if strings.Contains(i1.Get(), "*/") {
 				for ; !i1.MatchStart("/*"); i1.Prev() {
@@ -94,62 +95,100 @@ func section(s1 []string) (s2 [][][]string) {
 					i1.Next()
 				}
 				keyMap[i] = append(keyMap[i], i1.Cur())
-				fmt.Println(x, i)
-				fmt.Println("FOUND @", i1.Cur(), "::", i1.Next(), "::", i1.Next(), "::", i1.Next())
 				break
 			}
 			i1.Next()
 			keyMap[i] = append(keyMap[i], i1.Cur())
 		}
 	}
-	i1.Goto(0)
+	i1.Zero()
 
-	// spew.Dump(keyMap)
-
+	// sort the keymap
 	var sorted []string
 	for x := range keyMap {
 		sorted = append(sorted, x)
 	}
 	sort.Strings(sorted)
 
-	// spew.Dump(sorted)
-
-	for i, x := range keyMap {
-		for j, y := range keyList {
-			if x[0] == y && j < len(keyList)-1 {
-				keyMap[i] = append(x, keyList[j+1])
-			}
-		}
-	}
-	// spew.Dump(keyMap)
-
-	collated := make(map[string][]string)
-	for _, x := range its2.Keys {
-		collated[x] = []string{}
-	}
+	hasMain := false
 	for _, x := range sorted {
-		for j, y := range keyMap {
-			if x == j {
-				kk := strings.Split(x, " ")
-				keyword := kk[0]
-				start := y[1]
-				end := len(s1) - 1
-				if len(y) > 2 {
-					end = y[2]
-				}
-				for i := start; i < end-1; i++ {
-					collated[keyword] = append(collated[keyword], s1[i])
-				}
-			}
+		if x == "func main() {" {
+			hasMain = true
 		}
 	}
 
-	for _, x := range its2.Keys {
-		fmt.Println("//", x)
-		for _, y := range collated[x] {
-			fmt.Println("\t", y)
+	// skm (sorted key map) Assemble section keymap entry array for final composition
+	var skm []string
+	order := []string{
+		"package",
+		"import",
+		"type",
+		"const",
+		"var",
+		"func",
+	}
+
+	ord := its1.Create(order)
+	item := its1.Create(sorted)
+	for ord.Zero(); ord.OK(); ord.Next() {
+		if ord.Get() == "func" {
+			if hasMain {
+				// main always first function
+				skm = append(skm, "func main() {")
+			}
+		}
+		for item.Zero(); item.OK(); item.Next() {
+			if match(ord.Get(), item.Get()) {
+				if item.Get() == "func main() {" {
+					// main already at the top
+					continue
+				}
+				skm = append(skm, item.Get())
+			}
+		}
+		item.Zero()
+	}
+
+	var sectMarkers []int
+	for _, x := range keyMap {
+		sectMarkers = append(sectMarkers, x[1])
+	}
+	sectMarkers = append(sectMarkers, len(s1))
+	sort.Ints(sectMarkers)
+
+	var output [][]string
+	spew.Dump(skm)
+	spew.Dump(keyMap)
+	for _, x := range skm {
+		fmt.Println(x)
+		start := keyMap[x][1]
+		end := start
+		for j, y := range sectMarkers {
+			if start == y {
+				end = sectMarkers[j+1]
+			}
+		}
+		output = append(output, []string{})
+		for i := start; i < end; i++ {
+			output[len(output)-1] = append(output[len(output)-1], s1[i])
 		}
 	}
+
+	for i, x := range output {
+		for {
+			oi := its1.Create(output[i])
+			oi.Last()
+			if oi.Len() < 1 {
+				spew.Dump(output[i])
+				output[i] = x[:oi.Cur()]
+				spew.Dump(output[i])
+				continue
+			}
+			break
+		}
+	}
+
+	spew.Dump(output)
 
 	return
 }
@@ -178,16 +217,18 @@ func hasKey(s string) (int, bool) {
 // printHelp prints the help
 func printHelp() {
 	fmt.Print(`go source tidy
+	
+	usage: tidy <infile> [outfile]
+	
+		reads go source files, cleans and cuts them into individual declarations, groups and sorts them
 
-usage: tidy <infile> [outfile]
-
-reads go source files, cleans and cuts them into individual declarations, groups and sorts them
-
-use 'stdin' as filename to read from stdin
-
-multiple source files concatenated and fed to stdin automatically consolidates the imports, but will error if there is more than one package specified - and duplicate file scope symbols are not handled automatically
-
-`)
+		use 'stdin' as <infile> to read from stdin
+	
+		multiple source files concatenated and fed to stdin automatically consolidates the everything
+		
+		duplicate file scope symbols and are not handled automatically
+	
+	`)
 	os.Exit(1)
 }
 
@@ -210,3 +251,15 @@ comment
 */
 var sectBuffer [][][]string
 var chute int
+
+// IsKey returns true if the string has one of the keys at the start
+func IsKey(s string) bool {
+	for _, x := range its2.Keys {
+		if len(x) <= len(s) {
+			if x == s[:len(x)] {
+				return true
+			}
+		}
+	}
+	return false
+}

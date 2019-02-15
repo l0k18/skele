@@ -24,7 +24,7 @@ func Create(s []string) (S *Iter) {
 // Next returns the current item and increments the cursor, setting an error if the cursor is at the end
 func (i *Iter) Next() (s string) {
 	i.e = nil
-	if i.x < len(i.s)-2 {
+	if i.x < len(i.s)-1 {
 		s = i.s[i.x]
 		i.x++
 		return
@@ -82,7 +82,19 @@ func (i *Iter) Goto(I int) {
 		i.e = fmt.Errorf("index %d is out of slice bounds", i)
 	} else {
 		i.x = I
+		i.e = nil
 	}
+}
+
+// Zero goes back to the first index
+func (i *Iter) Zero() {
+	i.e = nil
+	i.x = 0
+}
+
+// Last goes to the last element
+func (i *Iter) Last() {
+	i.x = len(i.s) - 1
 }
 
 // Get returns the value at the cursor

@@ -77,7 +77,7 @@ func (i *Iter2) Sel(s string) {
 	}
 }
 
-// CurSlot returns the current slot that is active
+// CurSlot returns the current slot that is
 func (i *Iter2) CurSlot() int {
 	return i.x
 }
