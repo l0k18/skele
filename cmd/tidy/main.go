@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/parallelcointeam/skele/cmd/tidy/its1"
-	"github.com/parallelcointeam/skele/cmd/tidy/its2"
+	"github.com/l0k1verloren/skele/cmd/tidy/its1"
+	"github.com/l0k1verloren/skele/cmd/tidy/its2"
 )
 
 // sectMap stores the key lines mapped to their original line position and allows
@@ -64,14 +64,12 @@ func main() {
 	outfile = infile
 	if len(os.Args) > 2 {
 		outfile = os.Args[2]
-	}
-	if f, e = os.Create(outfile); e != nil {
-		panic(e)
+		if f, e = os.Create(outfile); e != nil {
+			panic(e)
+		}
 	} else {
 		// If no output file is given and input is stdin we cannot rewrite it, obviously, so we flip to stdout for the output writer
-		if infile == "stdin" {
-			f = os.Stdout
-		}
+		f = os.Stdout
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(readBuffer)))
 	scanner.Split(bufio.ScanLines)
@@ -128,17 +126,17 @@ func match(s1, s2 string) bool {
 func printHelp() {
 	fmt.Print(`go source tidy
 	
-	usage: tidy <infile> [outfile]
-	
-		reads go source files, cleans and cuts them into individual declarations, groups and sorts them
+usage: tidy <infile> [outfile]
 
-		use 'stdin' as <infile> to read from stdin
+	reads go source files, cleans and cuts them into individual declarations, groups and sorts them
+
+	use 'stdin' as <infile> to read from stdin, in this
+
+	multiple source files concatenated and fed to stdin automatically consolidates the everything
 	
-		multiple source files concatenated and fed to stdin automatically consolidates the everything
-		
-		duplicate file scope symbols and are not handled automatically
+	duplicate file scope symbols and are not handled automatically
 	
-	`)
+`)
 	os.Exit(1)
 }
 
@@ -207,17 +205,21 @@ func section(s1 []string) (s2 string) {
 	}
 	sort.Strings(sorted)
 
+	maincount := 0
 	hasMain := false
 	for _, x := range sorted {
 		if x == "func main() {" {
 			hasMain = true
+			maincount++
 		}
 	}
 
+	initcount := 0
 	hasInit := false
 	for _, x := range sorted {
 		if x == "func init() {" {
 			hasInit = true
+			initcount++
 		}
 	}
 
@@ -236,11 +238,11 @@ func section(s1 []string) (s2 string) {
 	item := its1.Create(sorted)
 	for ord.Zero(); ord.OK(); ord.Next() {
 		if ord.Get() == "func" {
-			if hasMain {
+			if hasMain && maincount < 2 {
 				// main always first function
 				skm = append(skm, "func main() {")
 			}
-			if hasInit {
+			if hasInit && initcount < 2 {
 				// init is second function, so it is visible in libraries near the top
 				skm = append(skm, "func init() {")
 			}
@@ -298,5 +300,3 @@ func section(s1 []string) (s2 string) {
 	}
 	return
 }
-
-
