@@ -87,6 +87,10 @@ func main() {
 	fmt.Fprintln(f, sectBuffer)
 }
 
+func init() {
+
+}
+
 // IsKey returns true if the string has one of the keys at the start
 func IsKey(s string) bool {
 	for _, x := range its2.Keys {
@@ -210,6 +214,13 @@ func section(s1 []string) (s2 string) {
 		}
 	}
 
+	hasInit := false
+	for _, x := range sorted {
+		if x == "func init() {" {
+			hasInit = true
+		}
+	}
+
 	// skm (sorted key map) Assemble section keymap entry array for final composition
 	var skm []string
 	order := []string{
@@ -229,11 +240,15 @@ func section(s1 []string) (s2 string) {
 				// main always first function
 				skm = append(skm, "func main() {")
 			}
+			if hasInit {
+				// init is second function, so it is visible in libraries near the top
+				skm = append(skm, "func init() {")
+			}
 		}
 		for item.Zero(); item.OK(); item.Next() {
 			if match(ord.Get(), item.Get()) {
-				if item.Get() == "func main() {" {
-					// main already at the top
+				if item.Get() == "func main() {" ||
+					item.Get() == "func init() {" {
 					continue
 				}
 				skm = append(skm, item.Get())
