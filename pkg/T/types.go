@@ -4,41 +4,87 @@ import (
 	"time"
 )
 
-type (
-	Int          int
-	IntList      []int
-	Float        float64
-	FloatList    []float64
-	Duration     time.Duration
-	DurationList []time.Duration
-	Time         time.Time
-	TimeList     []time.Time
-	Date         time.Time
-	DateList     []time.Time
-	Size         int
-	SizeList     []int
-	String       string
-	StringList   []string
-	Url          string
-	UrlList      []string
-	Address      string
-	AddressList  []string
-	Base58       []byte
-	Base58List   [][]byte
-	Base32       []byte
-	Base32List   [][]byte
-	Hex          string
-	HexList      []string
-	Key          struct {
-		Label    string
-		Template interface{}
-	}
-)
+var Int int
+var IntList []int
+var Float float64
+var FloatList []float64
+var Duration time.Duration
+var DurationList []time.Duration
+var Time time.Time
+var TimeList []time.Time
+var Date time.Time
+var DateList []time.Time
+var Size int
+var SizeList []int
+var String string
+var StringList []string
+var Url string
+var UrlList []string
+var Address string
+var AddressList []string
+var Base58 []byte
+var Base58List [][]byte
+var Base32 []byte
+var Base32List [][]byte
+var Hex string
+var HexList []string
+var Key struct {
+	Label    string
+	Template interface{}
+}
 
-func addType(name string, value interface{}) Key {
-	k := Key{name, value}
-	Types = append(Types, k)
-	return k
+// Cmd is the interface defining an API interface item and metadata
+type Cmd interface {
+	Append(p ...Cmd) Cmd
+	AUTH(...string) Cmd
+	Authors() []string
+	Cursor() Cursor
+	DATA(interface{}) Cmd
+	Data() interface{}
+	DESC(string) Cmd
+	Description() string
+	ERR(string, string) Cmd
+	Error() error
+	FUNC(func() error) Cmd
+	Function() error
+	HELP(string, string) Cmd
+	Help(string) string
+	Item(int) Cmd
+	LCNS(string) Cmd
+	Len() int
+	License() string
+	LIST(...Cmd) Cmd
+	List() []Cmd
+	Name() string
+	NAME(string) Cmd
+	OK() bool
+	Parent() Cmd
+	Path() string
+	PRNT(Cmd) Cmd
+	Scan([]string) error
+	Status() string
+	String() string
+	TYPE(string) Cmd
+	Type() string
+	VERS(string) Cmd
+	Version() string
+}
+
+// Cursor is the interface for a cursor on a Command tree
+type Cursor interface {
+	Cmd() Cmd
+	In() bool
+	Item() Cmd
+	Next() bool
+	Out() bool
+	Position() int
+	Prev() bool
+}
+
+// SecureBuffer is an interface for data types that require secure disposal rather than garbage collection
+type SecureBuffer interface {
+	Wipe()
+	Buf() []byte
 }
 
 // This combines a visible and recognisable label for skele types with a means to template variables parsed from strings
@@ -72,3 +118,9 @@ var (
 	HEXLIST      = addType("hexlist", *new(HexList))
 	HelpTypes    = []string{"pre", "markdown", "html"}
 )
+
+func addType(name string, value interface{}) Key {
+	k := Key{name, value}
+	Types = append(Types, k)
+	return k
+}

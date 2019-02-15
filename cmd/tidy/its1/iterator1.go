@@ -5,14 +5,12 @@ import (
 	"fmt"
 )
 
-type (
-	// Iter is for walking back and forth on a slife of strings
-	Iter struct {
-		s []string
-		x int
-		e error
-	}
-)
+// Iter is for walking back and forth on a slife of strings
+type Iter struct {
+	s []string
+	x int
+	e error
+}
 
 // Cur returns the current iterator position
 func (i *Iter) Cur() int {
@@ -28,6 +26,9 @@ func (i *Iter) Err() error {
 
 // Get returns the value at the cursor
 func (i *Iter) Get() (s string) {
+	if i.x < 0 {
+
+	}
 	return i.s[i.x]
 }
 

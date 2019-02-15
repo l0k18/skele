@@ -13,14 +13,47 @@ import (
 	"github.com/parallelcointeam/skele/cmd/tidy/its2"
 )
 
+// sectMap stores the key lines mapped to their original line position and allows
+type sectMap map[string][]int
+
+// token constant
+const pi = 3.1415927
+
+var chute int
+
+// error
+//
+var e error
+
+var f *os.File
+
+var infile, outfile string
+
+var lineBuffer []string
+
+var readBuffer []byte
+
+/* token multiline
+comment
+*/
+var sectBuffer string
+
 // main entrypoint to tidy
 func main() {
+	fmt.Println(os.Args)
 	if len(os.Args) > 1 {
 		infile = os.Args[1]
 		switch infile {
 		case "stdin":
 			f = os.Stdin
+			_, e := os.Stdin.Stat()
+			if e != nil {
+				panic(e)
+			}
+			readBuffer, e = ioutil.ReadAll(os.Stdin)
+			infile = ""
 		default:
+			fmt.Println("reading file in")
 			if readBuffer, e = ioutil.ReadFile(os.Args[1]); e != nil {
 				panic(e)
 			}
@@ -34,6 +67,11 @@ func main() {
 	}
 	if f, e = os.Create(outfile); e != nil {
 		panic(e)
+	} else {
+		// If no output file is given and input is stdin we cannot rewrite it, obviously, so we flip to stdout for the output writer
+		if infile == "stdin" {
+			f = os.Stdout
+		}
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(readBuffer)))
 	scanner.Split(bufio.ScanLines)
@@ -43,9 +81,61 @@ func main() {
 	if e := scanner.Err(); e != nil {
 		panic(e)
 	}
+
 	// lineBuffer = removeBlankLines(lineBuffer)
 	sectBuffer = section(lineBuffer)
 	fmt.Fprintln(f, sectBuffer)
+}
+
+// IsKey returns true if the string has one of the keys at the start
+func IsKey(s string) bool {
+	for _, x := range its2.Keys {
+		if len(x) <= len(s) {
+			if x == s[:len(x)] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// hasKey returns true if a key was found in the line
+func hasKey(s string) (int, bool) {
+	it := its1.Create(its2.Keys)
+	for it.OK() {
+		if it.MatchStart(s) {
+			return it.Cur(), true
+		}
+	}
+	return 0, false
+}
+
+// match returns true if the second string is at least as long and the second string's first part matches the first
+func match(s1, s2 string) bool {
+	if len(s1) <= len(s2) {
+		if s1 == s2[:len(s1)] {
+			return true
+		}
+	}
+	return false
+}
+
+// printHelp prints the help
+func printHelp() {
+	fmt.Print(`go source tidy
+	
+	usage: tidy <infile> [outfile]
+	
+		reads go source files, cleans and cuts them into individual declarations, groups and sorts them
+
+		use 'stdin' as <infile> to read from stdin
+	
+		multiple source files concatenated and fed to stdin automatically consolidates the everything
+		
+		duplicate file scope symbols and are not handled automatically
+	
+	`)
+	os.Exit(1)
 }
 
 func removeBlankLines(in []string) (out []string) {
@@ -62,6 +152,9 @@ func removeBlankLines(in []string) (out []string) {
 //
 //
 func section(s1 []string) (s2 string) {
+	if len(s1) < 1 {
+		os.Exit(1)
+	}
 	keyMap := make(sectMap)
 	i1 := its1.Create(s1)
 	// find and gather line numbers of all root level keywords at the start of the line
@@ -191,73 +284,4 @@ func section(s1 []string) (s2 string) {
 	return
 }
 
-// match returns true if the second string is at least as long and the second string's first part matches the first
-func match(s1, s2 string) bool {
-	if len(s1) <= len(s2) {
-		if s1 == s2[:len(s1)] {
-			return true
-		}
-	}
-	return false
-}
 
-// hasKey returns true if a key was found in the line
-func hasKey(s string) (int, bool) {
-	it := its1.Create(its2.Keys)
-	for it.OK() {
-		if it.MatchStart(s) {
-			return it.Cur(), true
-		}
-	}
-	return 0, false
-}
-
-// printHelp prints the help
-func printHelp() {
-	fmt.Print(`go source tidy
-	
-	usage: tidy <infile> [outfile]
-	
-		reads go source files, cleans and cuts them into individual declarations, groups and sorts them
-
-		use 'stdin' as <infile> to read from stdin
-	
-		multiple source files concatenated and fed to stdin automatically consolidates the everything
-		
-		duplicate file scope symbols and are not handled automatically
-	
-	`)
-	os.Exit(1)
-}
-
-// sectMap stores the key lines mapped to their original line position and allows
-type sectMap map[string][]int
-
-// token constant
-const pi = 3.1415927
-
-// error
-//
-var e error
-var infile, outfile string
-var f *os.File
-var readBuffer []byte
-var lineBuffer []string
-
-/* token multiline
-comment
-*/
-var sectBuffer string
-var chute int
-
-// IsKey returns true if the string has one of the keys at the start
-func IsKey(s string) bool {
-	for _, x := range its2.Keys {
-		if len(x) <= len(s) {
-			if x == s[:len(x)] {
-				return true
-			}
-		}
-	}
-	return false
-}
