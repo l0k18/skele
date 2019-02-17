@@ -60,7 +60,7 @@ func main() {
 	sort.Ints(keylist)
 	for j = range ss {
 		if matchstart("package", ss[i]) {
-			fmt.Printf("%s\n", ss[i])
+			// fmt.Printf("%s\n", ss[i])
 			break
 		}
 	}
@@ -79,18 +79,40 @@ func main() {
 		}
 	}
 	sort.Strings(sss)
-	zz = append(append(append(zz, ss[0]), ""), "import(")
+	zz = append(append(zz, ss[0]), "import (")
 	for i, x = range sss {
 		if z != x {
 			zz = append(zz, x)
 		}
 		z = x
 	}
-
 	for i, z = range zz {
 		fmt.Println(z)
 	}
 	fmt.Println(")")
+
+	// sss = []string{}
+
+	for i = range ss {
+		if matchstart("type", ss[i]) && fnd {
+			fmt.Println(ss[i])
+			for j = range ss[i] {
+				fmt.Println(ss[i])
+			}
+		}
+	}
+
+	sort.Strings(sss)
+	// fmt.Println(sss)
+	for i, x = range sss {
+		if z != x {
+			zz = append(zz, x)
+		}
+		z = x
+	}
+	for i, z = range zz {
+		fmt.Println(z)
+	}
 }
 
 func matchstart(key, line string) (bb bool) {
