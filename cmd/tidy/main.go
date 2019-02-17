@@ -70,10 +70,10 @@ func main() {
 	if e = scanner.Err(); e != nil {
 		panic(e)
 	}
-	lineBuffer = removeBlankLines(lineBuffer)
-	clean(lineBuffer)
-	// sectBuffer = section(lineBuffer)
-	// fmt.Fprintln(f, sectBuffer)
+	// lineBuffer = removeBlankLines(lineBuffer)
+	// clean(lineBuffer)
+	sectBuffer = section(lineBuffer)
+	fmt.Fprintln(f, sectBuffer)
 }
 
 func clean(s []string) {
@@ -82,7 +82,10 @@ func clean(s []string) {
 
 func printStrings(s []string) {
 	for _, x := range s {
+		// ttt := strings.Trim(x, "\t\n\r ")
+		// if !match("//", ttt) {
 		fmt.Fprintln(f, x)
+		// }
 	}
 }
 
@@ -231,7 +234,7 @@ func section(s1 []string) (s2 string) {
 					append(output[len(output)-1], s1[i])
 			}
 		}
-		// output[len(output)-1] = append(output[len(output)-1], "//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+		output[len(output)-1] = append(output[len(output)-1], "//>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 	}
 	for i, x := range output {
 		for {
