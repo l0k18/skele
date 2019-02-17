@@ -49,6 +49,9 @@ func (i *Iter) Last() {
 
 // Len returns the length of the current item
 func (i *Iter) Len() int {
+	if i.x > len(i.s)+2 {
+		i.x = 0
+	}
 	return len(i.s[i.x])
 }
 
