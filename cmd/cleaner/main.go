@@ -11,7 +11,7 @@ import (
 var fnd bool
 var f = os.Stdin
 var b []byte
-var s, fname, tc, tp, tn, x, y, z string
+var s, fname, tc, tp, tn, x, y, z, prevs string
 var ss, sss, zz []string
 var e error
 var i, j, k, start int
@@ -24,6 +24,9 @@ func main() {
 		panic(e)
 	}
 	b, e = ioutil.ReadAll(os.Stdin)
+	if e != nil {
+		panic(e)
+	}
 	s = string(b)
 	ss = strings.Split(s, "\n")
 	for i, x = range ss {
@@ -58,61 +61,49 @@ func main() {
 	}
 	sections = make(map[string][]string)
 	sort.Ints(keylist)
-	for j = range ss {
-		if matchstart("package", ss[i]) {
-			// fmt.Printf("%s\n", ss[i])
-			break
-		}
-	}
 
 	fnd = true
 	sss = []string{}
 	for i = range ss {
 		if matchstart("import", ss[i]) && fnd {
-			for j, x = range ss[i+1:] {
+			for j, x = range ss[i:] {
 				if x == ")" {
 					break
 				}
-				// fmt.Println(x)
-				sss = append(sss, x)
+				if matchstart(x, "import (") {
+					continue
+				}
+				sss = append(sss, strings.TrimSpace(x))
 			}
 		}
 	}
+	zz = []string{"import ("}
 	sort.Strings(sss)
-	zz = append(append(zz, ss[0]), "import (")
-	for i, x = range sss {
-		if z != x {
-			zz = append(zz, x)
-		}
-		z = x
-	}
-	for i, z = range zz {
-		fmt.Println(z)
-	}
-	fmt.Println(")")
-
-	// sss = []string{}
-
-	for i = range ss {
-		if matchstart("type", ss[i]) && fnd {
-			fmt.Println(ss[i])
-			for j = range ss[i] {
-				fmt.Println(ss[i])
+	for i = range sss {
+		if i > 0 {
+			if sss[i] == zz[len(zz)-1] {
+				continue
 			}
 		}
+		zz = append(zz, sss[i])
 	}
-
-	sort.Strings(sss)
-	// fmt.Println(sss)
-	for i, x = range sss {
-		if z != x {
-			zz = append(zz, x)
+	zz = append(zz, ")")
+	for i := range zz {
+		if i != 0 && i != len(zz)-1 {
+			fmt.Print("\t")
 		}
-		z = x
+		fmt.Println(zz[i])
 	}
-	for i, z = range zz {
-		fmt.Println(z)
+}
+
+func iskeyline(line string) (bb bool) {
+	if matchstart("type", line) ||
+		matchstart("const", line) ||
+		matchstart("var", line) ||
+		matchstart("func", line) {
+		bb = true
 	}
+	return
 }
 
 func matchstart(key, line string) (bb bool) {

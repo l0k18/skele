@@ -21,6 +21,8 @@ var confFile = DefaultDataDir + "/conf"
 
 const lH = "127.0.0.1:"
 
+type tokenalias int
+
 // ConfCfg is the settings that can be set to synchronise across all pod modules
 type ConfCfg struct {
 	DataDir          string
@@ -594,7 +596,7 @@ var CreateCommand = climax.Command{
 			fmt.Print(`Usage: create [-h] [-d] [-s] [-p] [-P] [-c] [--network]
 
 creates a new wallet given CLI flags, or interactively
-			
+
 Available options:
 
 	-h, --help
@@ -1448,7 +1450,7 @@ var SetupCommand = climax.Command{
 			fmt.Print(`Usage: create [-h] [-D] [--network]
 
 creates a new wallet given CLI flags, or interactively
-			
+
 Available options:
 
 	-h, --help
@@ -1498,7 +1500,7 @@ Available options:
 			fmt.Print("\n!!! A wallet already exists at '" + dbDir + "/wallet.db' !!! \n")
 			fmt.Println(`if you are sure it isn't valuable you can delete it before running this again:
 
-	rm ` + dbDir + `/wallet.db			
+	rm ` + dbDir + `/wallet.db
 `)
 			return 1
 		}
