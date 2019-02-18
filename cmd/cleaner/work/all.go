@@ -1,3 +1,4 @@
+// Package app is the main configuration and launcher for pod's modules
 package app
 
 import (
@@ -20,6 +21,8 @@ import (
 var confFile = DefaultDataDir + "/conf"
 
 const lH = "127.0.0.1:"
+
+const tokenconst=1
 
 type tokenalias int
 
